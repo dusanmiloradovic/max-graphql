@@ -12,5 +12,6 @@
    :target    :node-script
    :main      maximoplus.graphql/main
    :output-to "out/gscript.js"
+   :devtools {:repl-init-ns maximoplus.graphql}
    }}
  }
