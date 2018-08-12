@@ -1,5 +1,6 @@
 (ns maximoplus.graphql
   (:require [maximoplus.basecontrols :as b :refer [AppContainer Grid Section MboContainer]]
+            [maxiomplus.core :as c]
             ["xhr2-cookies" :refer [XMLHttpRequest]]
             ["cookiejar" :as cookies :refer [CookieJar]]
             ["eventsource" :as EventSource])
@@ -12,11 +13,20 @@
 
 (aset js/global "EventSource" EventSource)
 
-
+(c/setGlobalFunction "global_login_function"
+                     (fn [err]
+                       (c/max-login "maxadmin" "maxadmin"
+                                    (fn [ok]
+                                      (.log js/console "logged in"))
+                                    (fn [err]
+                                      (.log js/console "Not logged in error")
+                                      (.loj js/console err)))))
 
 (defn main
   []
   (.log js/console "bla"))
+
+
 
 (defn ojsa
   [x y]
