@@ -1,6 +1,8 @@
 (ns maximoplus.graphql
   (:require [maximoplus.basecontrols :as b :refer [AppContainer Grid Section MboContainer]]
-            [maxiomplus.core :as c]
+            [maximoplus.core :as c]
+            [maximoplus.net :as n]
+            [maximoplus.utils :as u]
             ["xhr2-cookies" :refer [XMLHttpRequest]]
             ["cookiejar" :as cookies :refer [CookieJar]]
             ["eventsource" :as EventSource])
@@ -13,18 +15,45 @@
 
 (aset js/global "EventSource" EventSource)
 
+(n/set-server-root "http://localhost:8080")
+
+(c/setGlobalFunction "globalDisplayWaitCursor" (fn [_]))
+
+(c/setGlobalFunction "globalRemoveWaitCursor" (fn [_]))
+
+(.on js/process "uncaughtException"
+     (fn [err] (u/debug "!" err)))
+
+(defn test-app
+  []
+  (u/debug "1")
+  (let [a (AppContainer. "po" "po")
+        g (Grid. a ["ponum" "status"] 20)]
+    (u/debug "2")
+    (b/render-deferred g)
+        (u/debug "3")
+        (b/init-data g)
+        (u/debug "4")
+    (b/page-next g)
+    (b/fetch-more g 5)))
+
 (c/setGlobalFunction "global_login_function"
                      (fn [err]
+                       (u/debug "logging in")
                        (c/max-login "maxadmin" "maxadmin"
                                     (fn [ok]
-                                      (.log js/console "logged in"))
+                                      (.log js/console "logged in")
+                                      (test-app))
                                     (fn [err]
                                       (.log js/console "Not logged in error")
                                       (.loj js/console err)))))
 
+
+
 (defn main
   []
-  (.log js/console "bla"))
+  (.log js/console "bla")
+  (test-app))
 
 
 
