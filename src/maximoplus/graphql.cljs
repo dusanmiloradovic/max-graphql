@@ -21,16 +21,30 @@
 
 (defn test-app
   []
-  (u/debug "1")
+
   (let [a (AppContainer. "po" "po")
         g (Grid. a ["ponum" "status"] 20)]
-    (u/debug "2")
+
     (b/render-deferred g)
-        (u/debug "3")
-        (b/init-data g)
-        (u/debug "4")
+
+    (b/init-data g)
+
     (b/page-next g)
-    (b/fetch-more g 5)))
+    (b/fetch-more g 5)
+    (c/page-init)
+    (js/setTimeout (fn [_]
+                 (let [a (AppContainer. "po" "po")
+                       g (Grid. a ["ponum" "status"] 20)]
+
+                   (b/render-deferred g)
+
+                   (b/init-data g)
+
+                   (b/page-next g)
+                   (b/fetch-more g 5)
+                   
+                   ) 5000
+                 ))))
 
 (c/setGlobalFunction "global_login_function"
                      (fn [err]

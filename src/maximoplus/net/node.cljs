@@ -13,25 +13,35 @@
 
 (def event-source (atom nil))
 
+(defn is-error?
+  ;;with the request node lib, the error will not come even if the http error code is 40x (maybe even 50x), it seems that the error is thrown only when the lib was not able to send
+  [resp]
+  (> (.-statusCode resp) 400))
+
 (defn send-data
   [option callback error-callback]
+  (.log js/console "sending data " )
+  (.log js/console option)
   (-req option 
         (fn [err resp body]
+          (.log js/console body)
           (if err
-            (error-callback [err 6 (.statusCode resp)]) ;;For the compatibility reasons with browser, I will use just 6 (error) and 0 no error
-            (callback [(transit-read body) 0 (.statusCode resp)])))))
+            (error-callback [err 6 (.-statusCode resp)]) ;;For the compatibility reasons with browser, I will use just 6 (error) and 0 no error
+            (if (is-error? resp)
+              (error-callback [(transit-read body) 0 (.-statusCode resp)])
+              (callback [(transit-read body) 0 (.-statusCode resp)]))))))
 
 (deftype Node []
   INet
   (-send-get
     [this url callback error-callback]
-    (-send-get this url nil callback error-callback))
+    (n/-send-get this url nil callback error-callback))
   (-send-get;;ingore data, them later just remove this method, I think it is obsolette
     [this url data callback error-callback]
     (send-data url callback error-callback))
   (-send-post
     [this url data callback error-callback]
-    (-send-post this url data callback error-callback nil))
+    (n/-send-post this url data callback error-callback nil))
   (-send-post
     [this url data callback error-callback progress-callback];;ignore progress for the time, i don't think it is relevant at this point
     (send-data #js{:url url
