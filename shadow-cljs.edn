@@ -2,9 +2,13 @@
 {:source-paths
  ["src"]
 
+;;:lein true
+
  :dependencies
  [[maximoplus-client "1.0.0-SNAPSHOT"]
-  [org.clojure/core.async "0.3.443"]]
+  [org.clojure/core.async "0.3.443"]
+   [thheller/shadow-cljs "2.4.33"]
+]
 
  :builds
  {:script
