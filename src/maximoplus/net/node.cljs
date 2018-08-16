@@ -18,6 +18,10 @@
   [resp]
   (> (.-statusCode resp) 400))
 
+(defn get-url-with-tabsess
+  [url]
+  (str url  (if (= -1 (.indexOf url "?")) "?" "&") "t=" @tabsess))
+
 (defn send-data
   [option callback error-callback]
   (.log js/console "sending data " )
@@ -38,13 +42,13 @@
     (n/-send-get this url nil callback error-callback))
   (-send-get;;ingore data, them later just remove this method, I think it is obsolette
     [this url data callback error-callback]
-    (send-data url callback error-callback))
+    (send-data (get-url-with-tabsess url) callback error-callback))
   (-send-post
     [this url data callback error-callback]
     (n/-send-post this url data callback error-callback nil))
   (-send-post
     [this url data callback error-callback progress-callback];;ignore progress for the time, i don't think it is relevant at this point
-    (send-data #js{:url url
+    (send-data #js{:url (get-url-with-tabsess url)
                    :body data
                    :method "POST"} callback error-callback))
   (-start-server-push-receiving
@@ -67,6 +71,7 @@
       (reset! event-source nil)))
   (-get-tabsess;;tabsess handling will be done by the implemntation (browser or node)
     [this]
+    (.log js/console (str "getting the tabsess and the value is " @tabsess))
     @tabsess)
   (-set-tabsess!
     [this _tabsess]
