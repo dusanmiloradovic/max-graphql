@@ -1,5 +1,6 @@
 (ns maximoplus.graphql
-  (:require [maximoplus.basecontrols :as b :refer [AppContainer Grid Section MboContainer]]
+  (:require [maximoplus.basecontrols :as b :refer [AppContainer MboContainer]]
+            [maximoplus.graphql.components :as q :refer [List]]
             [maximoplus.core :as c]
             [maximoplus.net :as n]
             [maximoplus.utils :as u]
@@ -23,7 +24,7 @@
   []
 
   (let [a (AppContainer. "po" "po")
-        g (Grid. a ["ponum" "status"] 20)]
+        g (List. a ["ponum" "status"] 20)]
 
     (b/render-deferred g)
 
