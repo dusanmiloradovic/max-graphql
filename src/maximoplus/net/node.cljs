@@ -24,11 +24,8 @@
 
 (defn send-data
   [option callback error-callback]
-  (.log js/console "sending data " )
-  (.log js/console option)
   (-req option 
         (fn [err resp body]
-          (.log js/console body)
           (if err
             (error-callback [err 6 (.-statusCode resp)]) ;;For the compatibility reasons with browser, I will use just 6 (error) and 0 no error
             (if (is-error? resp)
@@ -60,7 +57,6 @@
                          (fn [message]
                            (let [_data (aget message "data")
                                  data (if (= "" _data) "" (u/transit-read _data))]
-                             (u/debug "SSE" data)
                              (callback data))))
       (.addEventListener ev-s "error"
                          (fn [error] (error-callback error)))))
@@ -71,7 +67,6 @@
       (reset! event-source nil)))
   (-get-tabsess;;tabsess handling will be done by the implemntation (browser or node)
     [this]
-    (.log js/console (str "getting the tabsess and the value is " @tabsess))
     @tabsess)
   (-set-tabsess!
     [this _tabsess]
