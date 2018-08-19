@@ -14,14 +14,14 @@
 
 ;;most probably we will define in advance all the possible subscriptions possible in Maximo. User will need to define the return type (if available for the subscriptions (along with the fields required), so we now how to construct the data. Right now, I will just create one function to send the event, and later I will plug-in the subscription system
 
-(defn send-subscribed-event
+(defn send-subscription-event
   [container event-name event-value]
   ;;this function will be called from all the methods that can send the data to be streamed
   ;;it will find is there any subscriptions for that type of event
   (u/debug js/console "Subscription event for " (c/get-id container) " and " event-name " and " event-value)
   )
 
-(def-comp ListRow [container columns mxrow disprow] b/GridRow
+(def-comp GridRow [container columns mxrow disprow] b/GridRow
   (^override fn* [] (this-as this (googbase this container columns mxrow disprow)))
   UI
   (^override draw-row [this]
@@ -63,7 +63,7 @@
 
 ;;list holds the set of informations
 
-(def-comp List [container columns norows] b/Grid 
+(def-comp Grid [container columns norows] b/Grid 
   (^override fn* []
    (this-as this (googbase this container columns norows)))
   Table
@@ -75,7 +75,7 @@
   (^override header-row [this])
   (^override get-row-control
    [this mxrow disprow]
-   (ListRow. container columns mxrow disprow))
+   (GridRow. container columns mxrow disprow))
   (^override set-grid-row-values
    [this row values]
    (send-subscription-event container "data-row-update" {:row row :values values}))
@@ -84,10 +84,7 @@
    (send-subscription-event container "data-update" {:row row :column column :data value}))
   (^override set-grid-row-flags
    [this row flags]
-   (send-subscription-event container "flags-row-update" {:row row :flags values}))
-  (^override mark-grid-row-as-selected
-   [this row selected?]
-   (set-row-state-meta this row "selected" selected?))
+   (send-subscription-event container "flags-row-update" {:row row :flags flags}))
   (^override update-paginator [this fromRow toRow numRows]
    (send-subscription-event container "update-table-meta" {:meta "paginator" :value {:from fromRow :to toRow :numrows numRows}}))
   (^override highlight-grid-row
@@ -103,4 +100,12 @@
   (^override unpick-row
    [this row]
    (send-subscription-event container "update-row-meta" {:row row :meta "highlighted" :value false}))
+  Foundation
+  (^override dispose-child
+   [this row])
+  UI
+  (^override render-row
+   [this row])
+  (^override render-row-before
+   [this row existing-row])
   )

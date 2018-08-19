@@ -55,11 +55,16 @@
       (reset! event-source ev-s)
       (.addEventListener ev-s "message"
                          (fn [message]
-                           (let [_data (aget message "data")
-                                 data (if (= "" _data) "" (u/transit-read _data))]
-                             (callback data))))
+                           (.nextTick js/process
+                            (fn []
+                              (let [_data (aget message "data")
+                                    data (if (= "" _data) ["" 0 200] (u/transit-read _data))]
+                                (u/debug data)
+                                (callback data))))))
       (.addEventListener ev-s "error"
-                         (fn [error] (error-callback error)))))
+                         (fn [error]
+                           (u/debug "SSE error" error)
+                           ))))
   (-stop-server-push-receiving
     [this]
     (when @event-source

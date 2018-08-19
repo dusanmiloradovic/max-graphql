@@ -1,6 +1,6 @@
 (ns maximoplus.graphql
   (:require [maximoplus.basecontrols :as b :refer [AppContainer MboContainer]]
-            [maximoplus.graphql.components :as q :refer [List]]
+            [maximoplus.graphql.components :as q :refer [Grid]]
             [maximoplus.core :as c]
             [maximoplus.net :as n]
             [maximoplus.utils :as u]
@@ -24,36 +24,25 @@
   []
 
   (let [a (AppContainer. "po" "po")
-        g (List. a ["ponum" "status"] 20)]
-
+        g (Grid. a ["ponum" "status"] 20)]
     (b/render-deferred g)
-
     (b/init-data g)
-
     (b/page-next g)
     (b/fetch-more g 5)
-    (c/page-init)
-    (js/setTimeout (fn [_]
-                 (let [a (AppContainer. "po" "po")
-                       g (Grid. a ["ponum" "status"] 20)]
-
-                   (b/render-deferred g)
-
-                   (b/init-data g)
-
-                   (b/page-next g)
-                   (b/fetch-more g 5)
-                   
-                   ) 5000
-                 ))))
+    ))
 
 (c/setGlobalFunction "global_login_function"
                      (fn [err]
                        (u/debug "logging in")
                        (c/max-login "maxadmin" "maxadmin"
                                     (fn [ok]
-                                      (.log js/console "logged in")
-                                      (test-app))
+                                      (js/setImmediate
+                                       (fn [_]
+                                         (.log js/console "logged in")
+                                         (c/page-init)
+                                         (n/stop-server-push-receiving)
+                                         (c/start-event-dispatch) ;;all those above should be handled automatically
+                                         (test-app))))
                                     (fn [err]
                                       (.log js/console "Not logged in error")
                                       (.loj js/console err)))))
