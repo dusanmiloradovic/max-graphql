@@ -6,12 +6,15 @@
    ["eventsource" :as EventSource])
   )
 
-(def -req (.defaults request #js{:jar true}))
+(def cookie-jar (.jar request));; I have to get it explicitely, to share with eventsource
+
 ;;we can put jar true, because oll the variables are global for one session, so we have to spawn this from the main nodejs process (and then there is no need to have multiple jars)
 
 (def tabsess (atom "123"))
 
 (def event-source (atom nil))
+
+(def session-cookie (atom ""))
 
 (defn is-error?
   ;;with the request node lib, the error will not come even if the http error code is 40x (maybe even 50x), it seems that the error is thrown only when the lib was not able to send
@@ -24,13 +27,18 @@
 
 (defn send-data
   [option callback error-callback]
-  (-req option 
-        (fn [err resp body]
-          (if err
-            (error-callback [err 6 (.-statusCode resp)]) ;;For the compatibility reasons with browser, I will use just 6 (error) and 0 no error
-            (if (is-error? resp)
-              (error-callback [(transit-read body) 0 (.-statusCode resp)])
-              (callback [(transit-read body) 0 (.-statusCode resp)]))))))
+  (request option 
+           (fn [err resp body]
+             (reset! session-cookie (.getCookieString cookie-jar (aget option "url")))
+             (if err
+               (error-callback [err 6 (.-statusCode resp)]) ;;For the compatibility reasons with browser, I will use just 6 (error) and 0 no error
+               (if (is-error? resp)
+                 (do
+                   (.log js/console "there has been an error")
+                   (.log js/console (.-statusCode resp))
+                   (error-callback [(transit-read body) 0 (.-statusCode resp)])
+                   )
+                 (callback [(transit-read body) 0 (.-statusCode resp)]))))))
 
 (deftype Node []
   INet
@@ -39,7 +47,9 @@
     (n/-send-get this url nil callback error-callback))
   (-send-get;;ingore data, them later just remove this method, I think it is obsolette
     [this url data callback error-callback]
-    (send-data (get-url-with-tabsess url) callback error-callback))
+    (send-data #js{:url (get-url-with-tabsess url)
+                   :method "GET"
+                   :jar cookie-jar} callback error-callback))
   (-send-post
     [this url data callback error-callback]
     (n/-send-post this url data callback error-callback nil))
@@ -47,11 +57,13 @@
     [this url data callback error-callback progress-callback];;ignore progress for the time, i don't think it is relevant at this point
     (send-data #js{:url (get-url-with-tabsess url)
                    :body data
+                   :jar cookie-jar
                    :method "POST"} callback error-callback))
   (-start-server-push-receiving
     [this callback error-callback]
     (let [sse-url (n/sse)
-          ev-s (EventSource. sse-url #js {:withCredentials true})]
+          ev-s (EventSource. sse-url #js {:withCredentials true
+                                          :headers #js{"Cookie"  @session-cookie}})]
       (reset! event-source ev-s)
       (.addEventListener ev-s "message"
                          (fn [message]
@@ -59,10 +71,10 @@
                             (fn []
                               (let [_data (aget message "data")
                                     data (if (= "" _data) ["" 0 200] (u/transit-read _data))]
-                                (u/debug data)
                                 (callback data))))))
       (.addEventListener ev-s "error"
                          (fn [error]
+                           (.log js/console error)
                            (u/debug "SSE error" error)
                            ))))
   (-stop-server-push-receiving
