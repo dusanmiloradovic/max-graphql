@@ -31,8 +31,8 @@
         ]
     (b/render-deferred g)
     (b/init-data g)
-   ;; (b/page-next g)
-    ;;    (b/fetch-more g 5)
+    (b/page-next g)
+    (b/fetch-more g 5)
 ;;    (reset! buu a)
     ))
 
