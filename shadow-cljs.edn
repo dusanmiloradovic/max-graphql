@@ -1,12 +1,14 @@
 ;; shadow-cljs configuration
 {:source-paths
- ["src"]
+ ["src" "../maximoplus-client/src" ]
 
 ;;:lein true
 
  :dependencies
- [[maximoplus-client "1.0.0-SNAPSHOT"]
+ [
+  ;[maximoplus-client "1.0.0-SNAPSHOT"];;temporary until we fix lib for node
   [org.clojure/core.async "0.3.443"]
+  [cider/cider-nrepl "0.17.0"]
    [thheller/shadow-cljs "2.4.33"]
 ]
 
