@@ -15,7 +15,7 @@
   )
 
 (def resolvers #js{
-                   :Query: #js{
+                   :Query #js{
                                :books (fn [] books)
                                }})
 

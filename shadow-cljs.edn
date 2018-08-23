@@ -2,15 +2,16 @@
 {:source-paths
  ["src" "../maximoplus-client/src" ]
 
-;;:lein true
+ ;;:lein true
 
  :dependencies
  [
-  ;[maximoplus-client "1.0.0-SNAPSHOT"];;temporary until we fix lib for node
+                                        ;[maximoplus-client "1.0.0-SNAPSHOT"];;temporary until we fix lib for node
   [org.clojure/core.async "0.3.443"]
   [cider/cider-nrepl "0.17.0"]
-   [thheller/shadow-cljs "2.4.33"]
-]
+  [thheller/shadow-cljs "2.4.33"]
+  [cljs-node-io "1.0.0"]
+  ]
 
  :builds
  {:script
@@ -22,5 +23,14 @@
                       :optimizations :simple
                       :pretty-print true}
    :devtools {:repl-init-ns maximoplus.graphql}
-   }}
+   }
+  :server
+  {:id :server
+   :target :node-script
+   :main  graphqlserver.core/main
+   :output-to "out/server.js"
+   :compiler-options {:source-map false
+                      :optimizations :simple
+                      :pretty-print true}
+   :devtools {:repl-init-ns graphqlserver.core}}}
  }
