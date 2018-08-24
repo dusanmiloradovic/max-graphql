@@ -49,18 +49,17 @@
 
 
 
+(.on js/process "message"
+     (fn [m]
+       (when-let [type (aget m "type")]
+         (let [val (aget m "val")]
+           (when (= type "kill")
+             (.log js/console "killing child process")
+             (.exit js/process))
+           ))))
+
 (defn main
   []
-  (.log js/console "bla")
+  (.log js/console "child process started")
   (test-app)
   )
-
-
-
-(defn ojsa
-  [x y]
-  (+ x y))
-
-(defn blala
-  [x]
-  (- x 2))
