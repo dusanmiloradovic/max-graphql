@@ -49,37 +49,17 @@
           password (.-pass credentials)
           session (.-session req)]
       (open-child-script session #js{:username username :password password}
-                      (fn [sessionid]
-                        (if (and (map?  sessionid) (:error sessionid))
-                            ;;invalid username and password
-                            (do
-                              (.status res 401)
-                              (.setHeader res "WWW-Authenticate" "Basic realm=\"Maximo-GraphQL Realm\"")
-                              (.send res "Authentication required"))
-                            (when sessionid
-                              (aset session "t" sessionid)
-                              (.log js/console (str "setting session to " sessionid))
-                              (next)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                        (next))))
+                         (fn [sessionid]
+                           (if (and (map?  sessionid) (:error sessionid))
+                             ;;invalid username and password
+                             (do
+                               (.status res 401)
+                               (.setHeader res "WWW-Authenticate" "Basic realm=\"Maximo-GraphQL Realm\"")
+                               (.send res "Authentication required"))
+                             (when sessionid
+                               (aset session "t" sessionid)
+                               (.log js/console (str "setting session to " sessionid))
+                               (next))))))
     (next)))
 
 ;;the session check middleware and the http basic auth will be used just during the development. In production JWT will be utiziled. (no http headers, just errors in graphql response)

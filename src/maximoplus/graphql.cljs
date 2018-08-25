@@ -22,18 +22,18 @@
      (fn [err] (u/debug "!" err)))
 
 
-(defn test-app
-  []
-
-  (let [a (AppContainer. "po" "po")
-;;        a (AppContainer. "po" "po")
-        g (Grid. a ["ponum" "status"] 20)
-        ]
-    (b/render-deferred g)
-    (b/init-data g)
-    (b/page-next g)
-    (b/fetch-more g 5)
-    ))
+;;(defn test-app
+;;  []
+;;
+;;  (let [a (AppContainer. "po" "po")
+;;;;        a (AppContainer. "po" "po")
+;;        g (Grid. a ["ponum" "status"] 20)
+;;        ]
+;;    (b/render-deferred g)
+;;    (b/init-data g)
+;;    (b/page-next g)
+;;    (b/fetch-more g 5)
+;;    ))
 
 (defn login
   [val] ;;credentials will be the javascripit object send from tne parent process
