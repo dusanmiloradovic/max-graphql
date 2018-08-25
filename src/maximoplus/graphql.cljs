@@ -4,6 +4,7 @@
             [maximoplus.core :as c]
             [maximoplus.net :as n]
             [maximoplus.utils :as u]
+            [cljs.core.async :as a :refer [<!]]
             [maximoplus.net.node :refer [Node]]
 )
   (:require-macros [maximoplus.macros :as mm :refer [def-comp googbase kk! kk-nocb! kk-branch-nocb! p-deferred p-deferred-on custom-this kc!]]
@@ -43,8 +44,8 @@
       (c/max-login username password
                    (fn [ok]
                      (c/page-init)
-                     (go (let [session-id (<! @c/page-init-channel)]
-                           (.send js/process #js{:type "login" :val session-id}))))
+                     (p-deferred-on @c/page-init-channel
+                                    (.send js/process #js{:type "login" :val (n/get-tabsess)})))
                    (fn [err]
                      (.send js/process #js{:type "loginerror" :val err}))
                    ))))

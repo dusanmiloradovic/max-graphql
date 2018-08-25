@@ -84,7 +84,7 @@
       (reset! event-source nil))
     (when (not= "123" @tabsess)
       ;;where there was a real session. for graphql nodejs this means logout
-      (.send js/process #js{:type "logout" :val _tabsess})
+      (.send js/process #js{:type "logout" :val @tabsess})
       ))
   (-get-tabsess;;tabsess handling will be done by the implemntation (browser or node)
     [this]

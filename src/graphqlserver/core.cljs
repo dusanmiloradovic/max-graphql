@@ -53,7 +53,7 @@
           session (.-session req)]
       (max-authorizer username password
                       (fn [sessionid]
-                        (it (and (map?  sessionid) (:error sessionid))
+                        (if (and (map?  sessionid) (:error sessionid))
                             ;;invalid username and password
                             (do
                               (.status res 401)
@@ -87,7 +87,7 @@
   [process  maximo-session-id cb]
   (let [pid (.-pid process)
         obj (@child-processes pid)]
-    (swap! child-processess (assoc obj :maximo-session maximo-session-id))
+    (swap! child-processes (assoc obj :maximo-session maximo-session-id))
     (when cb (cb maximo-session-id))
     ))
 
@@ -100,7 +100,7 @@
 (defn logged-out
   [pid]
   (kill-child-process pid)
-  (swap! child-prcesses dissoc pid))
+  (swap! child-processes dissoc pid))
 
 (defn get-maximoplus-process
   [req-session]
@@ -110,7 +110,7 @@
                (= max-session-id (:maximo-session p)))
              @child-processes))))
 
-(defb process-child-process-message
+(defn process-child-message
   [m process cb]
   ;;handle to session t
   (let [type (aget m "type")
@@ -130,7 +130,7 @@
   (let [prc (fork "out/gscript.js")
         pid (.-pid prc)]
     (.on prc "message" (fn [m]
-                         (.log js/console m)
+                         (process-child-message m prc cb)
                          ))
     (.on prc "exit" (fn [_]
                       (.log js/console "child exit")
