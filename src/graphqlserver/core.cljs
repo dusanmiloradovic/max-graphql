@@ -39,6 +39,7 @@
     (next)))
 
 (declare open-child-script)
+(declare get-maximoplus-process)
 
 (defn max-basic-auth-middleware
   [req res next]
@@ -48,18 +49,22 @@
     (let [username (.-name credentials)
           password (.-pass credentials)
           session (.-session req)]
-      (open-child-script session #js{:username username :password password}
-                         (fn [sessionid]
-                           (if (and (map?  sessionid) (:error sessionid))
-                             ;;invalid username and password
-                             (do
-                               (.status res 401)
-                               (.setHeader res "WWW-Authenticate" "Basic realm=\"Maximo-GraphQL Realm\"")
-                               (.send res "Authentication required"))
-                             (when sessionid
-                               (aset session "t" sessionid)
-                               (.log js/console (str "setting session to " sessionid))
-                               (next))))))
+      (if-not (get-maximoplus-process session)
+        (open-child-script session #js{:username username :password password}
+                           (fn [sessionid]
+                             (if (and (map?  sessionid) (:error sessionid))
+                               ;;invalid username and password
+                               (do
+                                 (.status res 401)
+                                 (.setHeader res "WWW-Authenticate" "Basic realm=\"Maximo-GraphQL Realm\"")
+                                 (.send res "Authentication required"))
+                               (when sessionid
+                                 (aset session "t" sessionid)
+                                 (.log js/console (str "setting session to " sessionid))
+                                 (next)))))
+        (do
+          (.log js/console "valid session skipping logging")
+          (next))))
     (next)))
 
 ;;the session check middleware and the http basic auth will be used just during the development. In production JWT will be utiziled. (no http headers, just errors in graphql response)
@@ -82,13 +87,9 @@
 
 (defn logged-in
   [process  maximo-session-id cb]
-      (.log js/console (keys @child-processes))
-    (.log js/console "===2")
   (let [pid (.-pid process)
         obj (@child-processes pid)]
-    (.log js/console pid)
-    (swap! child-processes (assoc obj :maximo-session maximo-session-id))
-    (.log js/console "***")
+    (swap! child-processes assoc pid (assoc obj :maximo-session maximo-session-id))
     (when cb (cb maximo-session-id))))
 
 (defn login-error
@@ -105,10 +106,12 @@
 (defn get-maximoplus-process
   [req-session]
   (when-let [max-session-id (aget req-session "t")]
-    (:process
-     (filter (fn [p]
-               (= max-session-id (:maximo-session p)))
-             @child-processes))))
+    (.log js/console "trying to get the process for maximo sesion")
+    (.log js/console max-session-id)
+    (:process (second (first
+     (filter (fn [[k v]]
+               (= max-session-id (:maximo-session v)))
+             @child-processes))))))
 
 (defn process-child-message
   [m process cb]
@@ -116,9 +119,6 @@
   (let [type (aget m "type")
         value (aget m "val")
         pid (.-pid process)]
-    (.log js/console "processing child message")
-    (.log js/console m)
-    (.log js/console "-------------------------")
     (condp = type
       "loggedout" (logged-out pid)
       "loggedin" (logged-in process value cb)
@@ -139,8 +139,6 @@
                       (when (@child-processes pid)
                         (swap! child-processes dissoc pid))))
     (swap! child-processes assoc pid {:process prc})
-    (.log js/console (keys @child-processes))
-    (.log js/console "===1")
     (.send (:process (@child-processes pid))
            #js{:type "login" :val #js{:credentials credentials}})
     pid))
