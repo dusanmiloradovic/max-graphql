@@ -84,7 +84,7 @@
       (reset! event-source nil))
     (when (not= "123" @tabsess)
       ;;where there was a real session. for graphql nodejs this means logout
-      (.send js/process #js{:type "logout" :val @tabsess})
+      (.send js/process #js{:type "loggedout" :val @tabsess})
       ))
   (-get-tabsess;;tabsess handling will be done by the implemntation (browser or node)
     [this]
@@ -93,6 +93,6 @@
     [this _tabsess]
     (reset! tabsess _tabsess)
     ;;in graphql nodejs client, this will sign of successful login, so i need to send back the tab session to the parent process (will be used for a lookup(. In case I want to resuse this lib for React native this will not be there
-    (.send js/process #js{:type "login" :val _tabsess})
+
     )
   )

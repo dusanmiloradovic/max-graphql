@@ -25,11 +25,6 @@
                               ;;(fn [] (throw (AuthenticationError.)))
                               (fn [] books)
                               }})
-(defn max-authorizer
-  [username password cb]
-  (.log js/console "test auth ")
-  (cb "testsessionid")
-  )
 
 (defn max-session-check-middleware
   [req res next]
@@ -43,6 +38,8 @@
       )
     (next)))
 
+(declare open-child-script)
+
 (defn max-basic-auth-middleware
   [req res next]
   ;;for development only. the production will use jwt and error callback instead of http codes
@@ -51,17 +48,37 @@
     (let [username (.-name credentials)
           password (.-pass credentials)
           session (.-session req)]
-      (max-authorizer username password
+      (open-child-script session #js{:username username :password password}
                       (fn [sessionid]
                         (if (and (map?  sessionid) (:error sessionid))
                             ;;invalid username and password
                             (do
                               (.status res 401)
-                              (.setHeader res "WWW-Authenticate" "Basic realm=\"User Visible Realm\"")
+                              (.setHeader res "WWW-Authenticate" "Basic realm=\"Maximo-GraphQL Realm\"")
                               (.send res "Authentication required"))
                             (when sessionid
                               (aset session "t" sessionid)
-                              (.log js/console (str "setting session to " sessionid))))
+                              (.log js/console (str "setting session to " sessionid))
+                              (next)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                         (next))))
     (next)))
 
@@ -85,11 +102,14 @@
 
 (defn logged-in
   [process  maximo-session-id cb]
+      (.log js/console (keys @child-processes))
+    (.log js/console "===2")
   (let [pid (.-pid process)
         obj (@child-processes pid)]
+    (.log js/console pid)
     (swap! child-processes (assoc obj :maximo-session maximo-session-id))
-    (when cb (cb maximo-session-id))
-    ))
+    (.log js/console "***")
+    (when cb (cb maximo-session-id))))
 
 (defn login-error
   [err cb]
@@ -116,12 +136,14 @@
   (let [type (aget m "type")
         value (aget m "val")
         pid (.-pid process)]
+    (.log js/console "processing child message")
+    (.log js/console m)
+    (.log js/console "-------------------------")
     (condp = type
-      "logout" (logged-out pid)
-      "login" (logged-in process value cb)
+      "loggedout" (logged-out pid)
+      "loggedin" (logged-in process value cb)
       "loginerror" (login-error value cb)
-      :default)
-    )
+      :default))
   )
 
 (defn open-child-script
@@ -137,8 +159,10 @@
                       (when (@child-processes pid)
                         (swap! child-processes dissoc pid))))
     (swap! child-processes assoc pid {:process prc})
+    (.log js/console (keys @child-processes))
+    (.log js/console "===1")
     (.send (:process (@child-processes pid))
-           #js{:type "login" :value #js{:credentials credentials}})
+           #js{:type "login" :val #js{:credentials credentials}})
     pid))
 
 (defn kill-child-process

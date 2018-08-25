@@ -36,30 +36,39 @@
     ))
 
 (defn login
-  [credentials];;credentials will be the javascripit object send from tne parent process
-  (let [username (aget credentials "username")
-        password (aget credentials "passwoed")]
+  [val] ;;credentials will be the javascripit object send from tne parent process
+  (let [credentials (aget val "credentials")
+        _ (u/debug credentials)
+        username (aget credentials "username")
+        _ (u/debug username)
+        password (aget credentials "password")
+        _ (u/debug password)]
     (if-not (and username password)
       (.log js/console "logging in without username and password not yet implemented")
-      (c/max-login username password
-                   (fn [ok]
-                     (c/page-init)
-                     (p-deferred-on @c/page-init-channel
-                                    (.send js/process #js{:type "login" :val (n/get-tabsess)})))
-                   (fn [err]
-                     (.send js/process #js{:type "loginerror" :val err}))
-                   ))))
-
-(c/setGlobalFunction "global_login_function"
+      (do
+        (.log js/console "logging in script")
+        (c/max-login username password
+                     (fn [ok]
+                       (c/page-init)
+                       (p-deferred-on @c/page-init-channel
+                                      (.send js/process #js{:type "loggedin" :val (n/get-tabsess)})
+                                      (.log js/console "logged in process sent the message")
+                                      ))
                      (fn [err]
-                       (u/debug "logging in")
-                       (c/max-login "maxadmin" "maxadmin"
-                                    (fn [ok]
-                                      (.log js/console "logged in")
-                                      (test-app))
-                                    (fn [err]
-                                      (.log js/console "Not logged in error")
-                                      (.loj js/console err)))))
+                       (.send js/process #js{:type "loginerror" :val err}))
+                     )))))
+
+;;(c/setGlobalFunction "global_login_function"
+;;                     (fn [err]
+;;                       (u/debug "logging in")
+;;                       (c/max-login "maxadmin" "maxadmin"
+;;                                    (fn [ok]
+;;                                      (.log js/console "logged in")
+;;                                      (test-app))
+;;                                    (fn [err]
+;;                                      (.log js/console "Not logged in error")
+;;                                      (.loj js/console err)))))
+;;global login function should hot be required. 
 
 
 
@@ -67,13 +76,17 @@
      (fn [m]
        (when-let [type (aget m "type")]
          (let [val (aget m "val")]
+           (.log js/console "processing pparent message")
+           (.log js/console (str "type=" type))
+           (.log js/console (str "value=" val))
+           (.log js/console m)
+           (.log js/console "++++++++++++++++++++++++")
            (condp = type
              "kill" (do
                       (.log js/console "killing child process")
                       (.exit js/process))
              "login" (login val)
-             :default)
-           ))))
+             :default)))))
 
 (defn main
   []
