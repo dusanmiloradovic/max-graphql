@@ -20,7 +20,6 @@
 (.on js/process "uncaughtException"
      (fn [err] (u/debug "!" err)))
 
-(def buu (atom nil))
 
 (defn test-app
   []
@@ -33,8 +32,22 @@
     (b/init-data g)
     (b/page-next g)
     (b/fetch-more g 5)
-;;    (reset! buu a)
     ))
+
+(defn login
+  [credentials];;credentials will be the javascripit object send from tne parent process
+  (let [username (aget credentials "username")
+        password (aget credentials "passwoed")]
+    (if-not (and username password)
+      (.log js/console "logging in without username and password not yet implemented")
+      (c/max-login username password
+                   (fn [ok]
+                     (c/page-init)
+                     (go (let [session-id (<! @c/page-init-channel)]
+                           (.send js/process #js{:type "login" :val session-id}))))
+                   (fn [err]
+                     (.send js/process #js{:type "loginerror" :val err}))
+                   ))))
 
 (c/setGlobalFunction "global_login_function"
                      (fn [err]
@@ -53,13 +66,14 @@
      (fn [m]
        (when-let [type (aget m "type")]
          (let [val (aget m "val")]
-           (when (= type "kill")
-             (.log js/console "killing child process")
-             (.exit js/process))
+           (condp = type
+             "kill" (do
+                      (.log js/console "killing child process")
+                      (.exit js/process))
+             "login" (login val)
+             :default)
            ))))
 
 (defn main
   []
-  (.log js/console "child process started")
-  (test-app)
-  )
+  (.log js/console "child process started"))
