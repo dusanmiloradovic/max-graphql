@@ -5,9 +5,14 @@
    ["child_process" :refer [fork]]
    ["express-session" :as session]
    ["basic-auth" :as auth]
+   ["graphql" :refer [buildSchema graphqlSync introspectionQuery]]
    [cljs-node-io.core :as io :refer [slurp spit]]))
 
 (def child-processes (atom {}))
+
+(defn get-schema-string
+  []
+  (slurp "schema/sample.graphql"))
 
 (def books #js[#js{
                    :title "Harry Potter and the Chamber of Secrets"
@@ -19,11 +24,18 @@
                    }]
   )
 
+(defn get-ast-tree
+  []
+  (let [schema (buildSchema (get-schema-string))]
+    (.-data (graphqlSync schema introspectionQuery))))
+
 (def resolvers #js{
                    :Query #js{
                               :books
                               ;;(fn [] (throw (AuthenticationError.)))
-                              (fn [] books)
+                              (fn [obj args context info]
+                                (.log js/console info)
+                                books)
                               }})
 
 (defn max-session-check-middleware
@@ -71,7 +83,7 @@
 
 (defn main
   []
-  (let [schema (slurp "schema/sample.graphql")
+  (let [schema (get-schema-string)
         typedefs (gql schema)
         server (ApolloServer. #js{:typeDefs typedefs :resolvers resolvers})
         app (express)]
