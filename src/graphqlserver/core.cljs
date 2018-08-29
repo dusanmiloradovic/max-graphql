@@ -36,6 +36,9 @@
                               (fn [obj args context info]
                                 (.log js/console info)
                                 books)
+                              :book
+                              (fn[obj args context info]
+                                (aget books 0))
                               }})
 
 (defn max-session-check-middleware
@@ -158,4 +161,40 @@
 (defn kill-child-process
   [pid]
   (.send (:process (@child-processes pid)) #js{:type "kill" :val ""})
+  )
+
+
+;;the major idea is to automatically create the graphql resolver function based on schema
+;;once the AST is parsed, it should assign the resolvers for each field witht the return Maximo type. Arguments will be fixed. Inside the resolver, it should call the child script and get the data. The arguments passed: type (the type of the field - Query for the root). field name - for queries object for root and relationship name for children. handler - for pagination, the control id, pagination object
+
+;; the resolver function will returnm the data object from mp client script
+
+(defn get-function-type-signatures
+  []
+  (let [types (-> (get-ast-tree) (aget "__schema") (aget "types"))
+        flt (filter
+             (fn [t]
+               (and (= "OBJECT" (aget t "kind"))
+                    (not (.startsWith (aget t "name") "_"))))
+             types)
+        get-field-data
+        (fn [t]
+          {:name (aget t "name")
+           :type (let [tp (-> t (aget "type") (aget "kind"))]
+                   (if (= "LIST" tp)
+                     (-> t (aget "type") (aget "ofType") (aget "name"))
+                     (if (= "OBJECT" tp)
+                       (-> t (aget "type") (aget "name"))
+                       :scalar)
+                     ))
+           :list (= "LIST"  (-> t (aget "type") (aget "kind")))
+           })
+        ]
+    (map (fn [f]
+           {:name (aget f "name")
+            :fields (filter #(not= :scalar (:type %))
+                            (map get-field-data (aget f "fields")))})
+         flt)
+
+    )
   )

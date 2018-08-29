@@ -10,4 +10,5 @@ type Book {
 # (A "Mutation" type will be covered later on.)
 type Query {
   books: [Book]
+  book(author:String): Book
 }
