@@ -194,7 +194,16 @@
            {:name (aget f "name")
             :fields (filter #(not= :scalar (:type %))
                             (map get-field-data (aget f "fields")))})
-         flt)
+         flt)))
 
-    )
-  )
+(defn get-field-type
+  [object-name field-name]
+  ;;should return :qyery or :mutation
+  ;;the implemntaiton looks naive, but here is the reasoning:
+  ;;There will be no nested mutations in GraphQL for Maixmo
+  ;;and subscriptions are always only one level deep (and then the data can be captured with the simple query
+  (if (= "Subscription" object-name)
+    :subscription
+    (if (= "Mutation" object-name)
+        :mutation
+        :query)))
