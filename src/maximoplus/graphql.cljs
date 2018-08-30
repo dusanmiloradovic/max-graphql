@@ -6,6 +6,7 @@
             [maximoplus.utils :as u]
             [cljs.core.async :as a :refer [<!]]
             [maximoplus.net.node :refer [Node]]
+            [maximoplus.graphql.processing :as pr]
 )
   (:require-macros [maximoplus.macros :as mm :refer [def-comp googbase kk! kk-nocb! kk-branch-nocb! p-deferred p-deferred-on custom-this kc!]]
                    [cljs.core.async.macros :refer [go]]))
@@ -17,6 +18,16 @@
 (c/setGlobalFunction "globalDisplayWaitCursor" (fn [_]))
 
 (c/setGlobalFunction "globalRemoveWaitCursor" (fn [_]))
+
+(defn send-process
+  [message]
+  ;;the script should communicate with the parent script through process.send
+  ;;this is undefined however, if we run the standalone script for development purposes
+  (if (aget js/process "send")
+    (.send js/process message)
+    (do
+      (.log js/console "fake message sending")
+      (.log js/console message))))
 
 (.on js/process "uncaughtException"
      (fn [err] (u/debug "!" err)))
@@ -51,11 +62,11 @@
                      (fn [ok]
                        (c/page-init)
                        (p-deferred-on @c/page-init-channel
-                                      (.send js/process #js{:type "loggedin" :val (n/get-tabsess)})
+                                      (send-process #js{:type "loggedin" :val (n/get-tabsess)})
                                       (.log js/console "logged in process sent the message")
                                       ))
                      (fn [err]
-                       (.send js/process #js{:type "loginerror" :val err}))
+                       (send-process #js{:type "loginerror" :val err}))
                      )))))
 
 ;;(c/setGlobalFunction "global_login_function"
