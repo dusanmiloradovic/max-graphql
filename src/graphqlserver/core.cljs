@@ -5,10 +5,21 @@
    ["child_process" :refer [fork]]
    ["express-session" :as session]
    ["basic-auth" :as auth]
+   ["uniqid" :as uniqid]
    ["graphql" :refer [buildSchema graphqlSync introspectionQuery]]
-   [cljs-node-io.core :as io :refer [slurp spit]]))
+   [cljs-node-io.core :as io :refer [slurp spit]]
+   [cljs.core.async :as a :refer [<! put! chan]]
+   [cognitect.transit :as transit])
+  (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (def child-processes (atom {}))
+
+(def pending-messages (arom {}));;we send the commadn to the child process. When we receive it back, the promise is resolved, apollo returns the data to the client, and we delete the message from the map
+
+(def transit-reader (transit/reader :json))
+
+(defn transit-read [x]
+  (transit/read transit-reader x))
 
 (defn get-schema-string
   []
@@ -128,16 +139,25 @@
                (= max-session-id (:maximo-session v)))
              @child-processes))))))
 
+(defn process-command
+  [pid uid value]
+  (when-let [ch (@pending-messages uid)]
+    (swap! pending-messages dissoc uid)
+    (go
+      (put! ch (transit-read value)))))
+
 (defn process-child-message
   [m process cb]
   ;;handle to session t
   (let [type (aget m "type")
         value (aget m "val")
-        pid (.-pid process)]
+        pid (.-pid process)
+        uid (aget m "uid")]
     (condp = type
       "loggedout" (logged-out pid)
       "loggedin" (logged-in process value cb)
       "loginerror" (login-error value cb)
+      "command" (process-command pid uid value)
       :default))
   )
 
@@ -162,6 +182,30 @@
   [pid]
   (.send (:process (@child-processes pid)) #js{:type "kill" :val ""})
   )
+
+(defn get-graphql-value
+  [val]
+  ;;this will depend on what is inside
+  val)
+
+(defn send-graphql-command
+  [pid command-object]
+  ;;this will send the message of the type "command" to the child process with the command object containing all the necessary things
+  ;;inernally, I will create the channel, and the id of it will be sent to the child process. Once the command is finished, it will send back the results
+  ;;with this id, and the promise will be resolved
+  (let [uid (uniqid)
+        ch (chan)]
+    (swap! pending-messages assoc uid ch)
+    (.send (:process (@child-processes pid))
+           #js{:type "command"
+               :uid uid
+               :command command-object})
+    (js/Promise.
+     (fn [resolve reject]
+       (go
+         (let [command-return-val (<! ch)]
+           (resolve
+            (get-graphql-value command-return-val))))))))
 
 
 ;;the major idea is to automatically create the graphql resolver function based on schema

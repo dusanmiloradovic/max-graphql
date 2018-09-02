@@ -7,6 +7,7 @@
             [cljs.core.async :as a :refer [<!]]
             [maximoplus.net.node :refer [Node]]
             [maximoplus.graphql.processing :as pr]
+            [cognitect.transit :as transit]
 )
   (:require-macros [maximoplus.macros :as mm :refer [def-comp googbase kk! kk-nocb! kk-branch-nocb! p-deferred p-deferred-on custom-this kc!]]
                    [cljs.core.async.macros :refer [go]]))
@@ -18,6 +19,13 @@
 (c/setGlobalFunction "globalDisplayWaitCursor" (fn [_]))
 
 (c/setGlobalFunction "globalRemoveWaitCursor" (fn [_]))
+
+(def transit-writer (transit/writer :json))
+
+(defn transit-write [x]
+  ;use transit to create json from clojurescript object
+  (transit/write transit-writer x)
+  )
 
 (defn send-process
   [message]
@@ -80,13 +88,37 @@
 ;;                                      (.log js/console "Not logged in error")
 ;;                                      (.loj js/console err)))))
 ;;global login function should hot be required. 
+(defn process-fetch
+  [uid args]
+  (let [app-name (aget args "app")
+        object-name (aget args "object-name")
+        columns (aget args "columns")
+        start-row (aget args "start-row")
+        num-rows (aget args "num-rows")
+        ]
+    (.log js/console "calling process fetch from client")
+    (let [cont-id (pr/register-container app-name object-name)
+          fetch-prom (pr/fetch-data cont-id columns start-row num-rows)]
+      (.then fetch-prom
+             (fn [data]
+               (send-process #js{:type "command"
+                                 :uid uid
+                                 :val (transit-write
+                                       (conj data cont-id))}))))))
 
-
+(defn process-command
+  [uid val]
+  (let [command (aget val "command")
+        args (aget val "args")]
+    (condp = command
+      "fetch" (process-fetch uid args)
+      :default)))
 
 (.on js/process "message"
      (fn [m]
        (when-let [type (aget m "type")]
-         (let [val (aget m "val")]
+         (let [val (aget m "val")
+               uid (aget m "uid")]
            (.log js/console "processing pparent message")
            (.log js/console (str "type=" type))
            (.log js/console (str "value=" val))
@@ -97,6 +129,7 @@
                       (.log js/console "killing child process")
                       (.exit js/process))
              "login" (login val)
+             "command" (process-command uid val) 
              :default)))))
 
 (defn main

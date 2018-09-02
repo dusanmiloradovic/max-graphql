@@ -1,6 +1,6 @@
 (ns maximoplus.graphql.processing
   (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer]]
-            [maximoplus.core :as c :refer [get-id]]
+            [maximoplus.core :as c :refer [get-id get-fetched-row-data]]
             [maximoplus.promises :as p]))
 
 (def registered-containers
@@ -19,7 +19,8 @@
 (defn register-container
   [app-name object-name]
   (let [cont (AppContainer. object-name app-name)]
-    (swap! registered-containers assoc (get-id cont) cont )))
+    (swap! registered-containers assoc (get-id cont) cont )
+    (get-id cont)))
 
 (defn register-rel-contanier
   [parent-id rel-name]
@@ -31,7 +32,10 @@
   ;; all the graphql error handling needs to be done inline here, so I need promise, but i think capturing will be done in the outermost loop
   (let [cont (@registered-containers container-id)]
     (b/register-columns cont columns nil nil)
-    (b/fetch-data cont start-row num-rows nil nil)))
+    (.then
+     (b/fetch-data cont start-row num-rows nil nil)
+     (fn [[data _ _]]
+       (map get-fetched-row-data data)))))
 
 (defn get-data
   [app-name
