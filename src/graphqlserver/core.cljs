@@ -14,7 +14,7 @@
 
 (def child-processes (atom {}))
 
-(def pending-messages (arom {}));;we send the commadn to the child process. When we receive it back, the promise is resolved, apollo returns the data to the client, and we delete the message from the map
+(def pending-messages (atom {}));;we send the commadn to the child process. When we receive it back, the promise is resolved, apollo returns the data to the client, and we delete the message from the map
 
 (def transit-reader (transit/reader :json))
 
@@ -199,7 +199,7 @@
     (.send (:process (@child-processes pid))
            #js{:type "command"
                :uid uid
-               :command command-object})
+               :val command-object})
     (js/Promise.
      (fn [resolve reject]
        (go
