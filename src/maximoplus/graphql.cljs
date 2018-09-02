@@ -120,9 +120,9 @@
          (let [val (aget m "val")
                uid (aget m "uid")]
            (.log js/console "processing pparent message")
-           (.log js/console (str "type=" type))
-           (.log js/console (str "value=" val))
-           (.log js/console m)
+;           (.log js/console (str "type=" type))
+ ;          (.log js/console (str "value=" val))
+;           (.log js/console m)
            (.log js/console "++++++++++++++++++++++++")
            (condp = type
              "kill" (do
