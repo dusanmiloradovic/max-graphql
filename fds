@@ -1,0 +1,9 @@
+(open-child-script session #js{:username "7061" :password "fdas"}(fn[ok](.log js/console ok)))
+
+(send-graphql-command 1632 #js{
+                                          :command "fetch"
+                                          :args #js{:app-name "po"
+                                                    :object-name "postd"
+                                                    :columns #js["ponum","status","description"]
+                                                    :start-row 0
+                                                    :num-rows 10}})

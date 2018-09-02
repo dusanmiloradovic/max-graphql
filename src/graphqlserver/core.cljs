@@ -242,7 +242,7 @@
 
 (defn get-field-type
   [object-name field-name]
-  ;;should return :qyery or :mutation
+  ;;should return :qyery or :mutation but
   ;;the implemntaiton looks naive, but here is the reasoning:
   ;;There will be no nested mutations in GraphQL for Maixmo
   ;;and subscriptions are always only one level deep (and then the data can be captured with the simple query
