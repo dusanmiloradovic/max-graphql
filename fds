@@ -1,9 +1,11 @@
 (open-child-script session #js{:username "7061" :password "fdas"}(fn[ok](.log js/console ok)))
 
+(test-po-resolver nil #js{:fromRow 0 :numRows 10} #js{:pid 9880} nil)
+
 (send-graphql-command 1632 #js{
                                           :command "fetch"
-                                          :args #js{:app-name "po"
+                                          :args #js{:app "po"
                                                     :object-name "postd"
-                                                    :columns #js["ponum","status","description"]
+                                                    :columns #js["ponum" "status" "description"]
                                                     :start-row 0
                                                     :num-rows 10}})

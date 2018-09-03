@@ -95,9 +95,10 @@
         columns (aget args "columns")
         start-row (aget args "start-row")
         num-rows (aget args "num-rows")
+        handle (aget args "handle") ;;handle is container id, useful for the paging
         ]
-    (.log js/console "calling process fetch from client")
-    (let [cont-id (pr/register-container app-name object-name)
+    (let [cont-id (if handle handle
+                      (pr/register-container app-name object-name))
           fetch-prom (pr/fetch-data cont-id columns start-row num-rows)]
       (.then fetch-prom
              (fn [data]
@@ -120,9 +121,9 @@
          (let [val (aget m "val")
                uid (aget m "uid")]
            (.log js/console "processing pparent message")
-;           (.log js/console (str "type=" type))
- ;          (.log js/console (str "value=" val))
-;           (.log js/console m)
+           (.log js/console (str "type=" type))
+           (.log js/console (str "value=" val))
+           (.log js/console m)
            (.log js/console "++++++++++++++++++++++++")
            (condp = type
              "kill" (do

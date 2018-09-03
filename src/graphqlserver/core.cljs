@@ -40,6 +40,49 @@
   (let [schema (buildSchema (get-schema-string))]
     (.-data (graphqlSync schema introspectionQuery))))
 
+(declare send-graphql-command)
+
+(defn transform-maximo-query-object
+  [component-id]
+  (fn [dta]
+    (into {}
+          (conj
+           (map (fn [[k v]]
+                  [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
+                  )
+                dta)
+           ["_handler" component-id]))))
+
+(defn test-po-resolver
+  [obj args context info]
+  (let [from-row (aget args "fromRow")
+        num-rows (aget args "numRows")
+        res-p (send-graphql-command 
+               (aget context "pid")
+               #js{:command "fetch"
+                   :args #js{:app "po"
+                             :object-name "postd"
+                             :columns #js["ponum" "status" "description"]
+                             :start-row from-row
+                             :num-rows num-rows}}
+               )]
+    (.then res-p
+                   (fn [res]
+                     (let [component-id (first res)
+                           _res (rest res)]
+                       (map
+                        (fn [[rownum data flaga]]
+                          (into {}
+                                (conj
+                                 (map (fn [[k v]]
+                                        [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
+                                        )
+                                      data)
+                                 ["_handler" component-id])))
+                        _res)))
+                   )
+    ))
+
 (def resolvers #js{
                    :Query #js{
                               :books
@@ -99,7 +142,13 @@
   []
   (let [schema (get-schema-string)
         typedefs (gql schema)
-        server (ApolloServer. #js{:typeDefs typedefs :resolvers resolvers})
+        server (ApolloServer.
+                #js{:typeDefs typedefs
+                    :resolvers resolvers
+                    :context (fn [obj]
+                               (let [req-arg (aget obj "req")
+                                     session (aget req-arg "session")]
+                                 #js{:pid (get-maximoplus-process session)}))} )
         app (express)]
     (.use app (session #js{:secret "keyboard cat" :cookie #js {:httpOnly false}}))
     (.use app max-basic-auth-middleware)
