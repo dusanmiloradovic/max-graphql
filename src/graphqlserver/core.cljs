@@ -42,16 +42,6 @@
 
 (declare send-graphql-command)
 
-(defn transform-maximo-query-object
-  [component-id]
-  (fn [dta]
-    (into {}
-          (conj
-           (map (fn [[k v]]
-                  [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
-                  )
-                dta)
-           ["_handler" component-id]))))
 
 (defn test-po-resolver
   [obj args context info]
@@ -70,16 +60,17 @@
                    (fn [res]
                      (let [component-id (first res)
                            _res (rest res)]
-                       (map
-                        (fn [[rownum data flaga]]
-                          (into {}
-                                (conj
-                                 (map (fn [[k v]]
-                                        [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
-                                        )
-                                      data)
-                                 ["_handler" component-id])))
-                        _res)))
+                       (clj->js
+                        (map
+                         (fn [[rownum data flaga]]
+                           (into {}
+                                 (conj
+                                  (map (fn [[k v]]
+                                         [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
+                                         )
+                                       data)
+                                  ["_handler" component-id])))
+                         _res))))
                    )
     ))
 
@@ -93,6 +84,7 @@
                               :book
                               (fn[obj args context info]
                                 (aget books 0))
+                              :po test-po-resolver
                               }})
 
 (defn max-session-check-middleware
