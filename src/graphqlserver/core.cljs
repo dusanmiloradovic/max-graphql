@@ -145,6 +145,10 @@
         server (ApolloServer.
                 #js{:typeDefs typedefs
                     :resolvers resolvers
+                    :playground #js{:settings #js{"editor.theme" "light"
+                                                  "request.credentials" "same-origin"
+                                                  }
+                                    }
                     :context (fn [obj]
                                (let [req-arg (aget obj "req")
                                      session (aget req-arg "session")]

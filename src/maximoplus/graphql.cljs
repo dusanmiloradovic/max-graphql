@@ -97,7 +97,7 @@
         num-rows (aget args "num-rows")
         handle (aget args "handle") ;;handle is container id, useful for the paging
         ]
-    (let [cont-id (if handle handle
+    (let [cont-id (if (and handle (@pr/registered-containers handle)) handle
                       (pr/register-container app-name object-name))
           fetch-prom (pr/fetch-data cont-id columns start-row num-rows)]
       (.then fetch-prom
