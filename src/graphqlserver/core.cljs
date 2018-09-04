@@ -42,6 +42,7 @@
 
 (declare send-graphql-command)
 
+(declare get-maximo-scalar-fields)
 
 (defn test-po-resolver
   [obj args context info]
@@ -52,14 +53,12 @@
                #js{:command "fetch"
                    :args #js{:app "po"
                              :object-name "postd"
-                             :columns #js["ponum" "status" "description"]
+                             :columns (get-maximo-scalar-fields "POSTD")
                              :start-row from-row
                              :num-rows num-rows}}
                )]
     (.then res-p
            (fn [res]
-             (.log js/console res)
-             (.log js/console (first res))
                      (let [component-id (first res)
                            _res (rest res)]
                        (clj->js
@@ -134,6 +133,8 @@
 
 (declare get-maximoplus-pid)
 
+(def running (atom nil)) ;;so we can stop and start from repl
+
 (defn main
   []
   (let [schema (get-schema-string)
@@ -145,16 +146,18 @@
                                (let [req-arg (aget obj "req")
                                      session (aget req-arg "session")]
                                  #js{:pid (get-maximoplus-pid session)}))} )
-        app (express)]
+        app (express)
+        ]
     (.use app (session #js{:secret "keyboard cat" :cookie #js {:httpOnly false}}))
     (.use app max-basic-auth-middleware)
     (.use app max-session-check-middleware)
 
 
     (.applyMiddleware server #js {:app app})
-    (.listen app #js {:port 4001}
-             (fn [url]
-               (.log js/console (str "server ready at" (.-graphqlPath server)))))))
+    (reset! running
+            (.listen app #js {:port 4001}
+                     (fn [url]
+                       (.log js/console (str "server ready at" (.-graphqlPath server))))))))
 
 (defn logged-in
   [process  maximo-session-id cb]
@@ -268,32 +271,58 @@
 
 ;; the resolver function will returnm the data object from mp client script
 
+(defn   get-field-data
+  [t]
+  {:name (aget t "name")
+   :type (let [tp (-> t (aget "type") (aget "kind"))]
+           (if (= "LIST" tp)
+             (-> t (aget "type") (aget "ofType") (aget "name"))
+             (if (= "OBJECT" tp)
+               (-> t (aget "type") (aget "name"))
+               :scalar)
+             ))
+   :list (= "LIST"  (-> t (aget "type") (aget "kind")))
+   })
+
+(defn get-filtered-types
+  []
+  (let [types (-> (get-ast-tree) (aget "__schema") (aget "types"))]
+    (filter
+     (fn [t]
+       (and (= "OBJECT" (aget t "kind"))
+            (not (.startsWith (aget t "name") "_"))))
+     types)))
+
 (defn get-function-type-signatures
   []
-  (let [types (-> (get-ast-tree) (aget "__schema") (aget "types"))
-        flt (filter
-             (fn [t]
-               (and (= "OBJECT" (aget t "kind"))
-                    (not (.startsWith (aget t "name") "_"))))
-             types)
-        get-field-data
-        (fn [t]
-          {:name (aget t "name")
-           :type (let [tp (-> t (aget "type") (aget "kind"))]
-                   (if (= "LIST" tp)
-                     (-> t (aget "type") (aget "ofType") (aget "name"))
-                     (if (= "OBJECT" tp)
-                       (-> t (aget "type") (aget "name"))
-                       :scalar)
-                     ))
-           :list (= "LIST"  (-> t (aget "type") (aget "kind")))
-           })
-        ]
+  (let [flt (get-filtered-types)]
     (map (fn [f]
            {:name (aget f "name")
             :fields (filter #(not= :scalar (:type %))
                             (map get-field-data (aget f "fields")))})
          flt)))
+
+(defn get-scalar-fields
+  [gql-type]
+  (filter #(= (:type %) :scalar)
+          (map get-field-data
+               (aget
+                (->>
+                 (get-filtered-types)
+                 (filter (fn [t]
+                           (= gql-type (aget t "name"))
+                           ))
+                 (first)) "fields")))
+  )
+
+(defn get-maximo-scalar-fields
+  [gql-type]
+  ;;this will be used in resolver to create the list of fields to fetch from the container. The automatically created resolver will use this.
+  (->> (get-scalar-fields gql-type)
+       (filter #(and (not= (:name %) "id" )
+                    (not (.startsWith (:name %) "_"))))
+       (map :name)
+       clj->js))
 
 (defn get-field-type
   [object-name field-name]
@@ -301,8 +330,17 @@
   ;;the implemntaiton looks naive, but here is the reasoning:
   ;;There will be no nested mutations in GraphQL for Maixmo
   ;;and subscriptions are always only one level deep (and then the data can be captured with the simple query
+  (.log js/console "bla")
   (if (= "Subscription" object-name)
     :subscription
     (if (= "Mutation" object-name)
         :mutation
         :query)))
+
+(defn ^:dev/before-load stop []
+  (js/console.log "stop")
+  (.close @running))
+
+(defn ^:dev/after-load start []
+  (js/console.log "start")
+  (main))

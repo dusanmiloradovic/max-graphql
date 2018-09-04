@@ -32,5 +32,7 @@
    :compiler-options {:source-map false
                       :optimizations :simple
                       :pretty-print true}
-   :devtools {:repl-init-ns graphqlserver.core}}}
+   :devtools {:repl-init-ns graphqlserver.core
+              :before-load graphqlserver.core/stop
+              :after-load graphqlserver.core/start}}}
  }
