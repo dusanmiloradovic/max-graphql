@@ -11,7 +11,7 @@ type Book {
 type Query {
   books: [Book]
   book(author:String): Book
-  po(fromRow:Int, numRows:Int):[POSTD]
+  po(fromRow:Int, numRows:Int,_handle:String):[POSTD]
 }
 
 #obrisi ovo kada ide u prod, iz gaska

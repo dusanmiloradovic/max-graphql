@@ -48,6 +48,7 @@
   [obj args context info]
   (let [from-row (aget args "fromRow")
         num-rows (aget args "numRows")
+        handle (aget args "_handle")
         res-p (send-graphql-command 
                (aget context "pid")
                #js{:command "fetch"
@@ -55,7 +56,9 @@
                              :object-name "postd"
                              :columns (get-maximo-scalar-fields "POSTD")
                              :start-row from-row
-                             :num-rows num-rows}}
+                             :num-rows num-rows
+                             :handle handle
+                             }}
                )]
     (.then res-p
            (fn [res]
@@ -251,6 +254,7 @@
   ;;this will send the message of the type "command" to the child process with the command object containing all the necessary things
   ;;inernally, I will create the channel, and the id of it will be sent to the child process. Once the command is finished, it will send back the results
   ;;with this id, and the promise will be resolved
+  (.log js/console command-object)
   (let [uid (uniqid)
         ch (chan)]
     (swap! pending-messages assoc uid ch)
