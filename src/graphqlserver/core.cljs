@@ -57,7 +57,9 @@
                              :num-rows num-rows}}
                )]
     (.then res-p
-                   (fn [res]
+           (fn [res]
+             (.log js/console res)
+             (.log js/console (first res))
                      (let [component-id (first res)
                            _res (rest res)]
                        (clj->js
@@ -69,7 +71,7 @@
                                          [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
                                          )
                                        data)
-                                  ["_handler" component-id])))
+                                  ["_handle" component-id])))
                          _res))))
                    )
     ))
@@ -130,6 +132,8 @@
 
 ;;the session check middleware and the http basic auth will be used just during the development. In production JWT will be utiziled. (no http headers, just errors in graphql response)
 
+(declare get-maximoplus-pid)
+
 (defn main
   []
   (let [schema (get-schema-string)
@@ -140,7 +144,7 @@
                     :context (fn [obj]
                                (let [req-arg (aget obj "req")
                                      session (aget req-arg "session")]
-                                 #js{:pid (get-maximoplus-process session)}))} )
+                                 #js{:pid (get-maximoplus-pid session)}))} )
         app (express)]
     (.use app (session #js{:secret "keyboard cat" :cookie #js {:httpOnly false}}))
     (.use app max-basic-auth-middleware)
@@ -179,6 +183,16 @@
      (filter (fn [[k v]]
                (= max-session-id (:maximo-session v)))
              @child-processes))))))
+
+(defn get-maximoplus-pid
+  [req-session]
+  (when-let [max-session-id (aget req-session "t")]
+    (.log js/console "trying to get the process for maximo sesion")
+    (.log js/console max-session-id)
+    (first(first
+           (filter (fn [[k v]]
+                     (= max-session-id (:maximo-session v)))
+                   @child-processes)))))
 
 (defn process-command
   [pid uid value]
