@@ -1,5 +1,5 @@
 (ns maximoplus.graphql.processing
-  (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer]]
+  (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer]]
             [maximoplus.core :as c :refer [get-id get-fetched-row-data]]
             [maximoplus.promises :as p]))
 
@@ -23,10 +23,16 @@
 ;;with the idea of not using the controls, I will have to keep the track of the qbes. if the qbe posted with the query is the same as the one registered, I will do nothing. If the qbe posted is different, and the data was changed wihtout commit or rollback, the exception will be thrown
 
 (defn register-container
-  [app-name object-name]
-  (let [cont (AppContainer. object-name app-name)]
-    (swap! registered-containers assoc (get-id cont) cont )
-    (get-id cont)))
+  [args]
+  (let [object-name (aget args "object-name")
+        app-name (aget args "app")
+        qbe (aget args "qbe")
+        uniqueid (when qbe (aget qbe "id"))]
+    (let [cont (if uniqueid
+                 (UniqueMboAppContainer. object-name app-name uniqueid)
+                 (AppContainer. object-name app-name))]
+      (swap! registered-containers assoc (get-id cont) cont )
+      (get-id cont))))
 
 (defn register-rel-contanier
   [parent-id rel-name]
@@ -36,8 +42,12 @@
 (defn set-qbe
   [cont qbe]
   (swap! registered-qbe assoc (c/get-id cont) qbe)
-  (doseq [[k v] qbe]
-    (b/set-qbe cont k v nil nil)))
+  (if-let [uniqueid (aget qbe "id")]
+    (b/move-to-uniqueid cont uniqueid nil nil)
+    (do
+      (doseq [[k v] qbe]
+        (b/set-qbe cont k v nil nil))
+      (b/reset cont nil nil))))
 
 (defn fetch-data
   [container-id columns start-row num-rows qbe]
@@ -49,7 +59,10 @@
         (throw (js/Error. "Data changed, first rollback or save the data"))
         (set-qbe cont qbe)))
     (.then
-     (b/fetch-data cont start-row num-rows nil nil)
+     (let [has-uniqueid? (aget qbe "uniqueid")
+           _start-row (if has-uniqueid? 0 start-row)
+           _num-rows (if has-uniqueid? 1 num-rows)]
+       (b/fetch-data cont _start-row _num-rows nil nil))
      (fn [[data _ _]]
        (map get-fetched-row-data data)))))
 

@@ -11,7 +11,8 @@ type Book {
 type Query {
   books: [Book]
   book(author:String): Book
-  po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+#  po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
 }
 
 #obrisi ovo kada ide u prod, iz gaska
@@ -23,7 +24,7 @@ type POSTD{
   _handle:String
 }
 
-type POSTDQBE{
+input POSTDQBE{
   id:ID
   ponum:String
   description:String
@@ -40,7 +41,7 @@ type PO{
 
 #For the qbe types all paramenters will be string except the id
 #If id is set wverything else is ignored
-type POQBE{
+input POQBE{
   id:ID
   ponum:String
   description:String

@@ -99,7 +99,7 @@
         qbe (aget args "qbe")
         ]
     (let [cont-id (if (and handle (@pr/registered-containers handle)) handle
-                      (pr/register-container app-name object-name))
+                      (pr/register-container args))
           fetch-prom (pr/fetch-data cont-id columns start-row num-rows (js->clj qbe))]
       (.then fetch-prom
              (fn [data]

@@ -44,6 +44,12 @@
 
 (declare get-maximo-scalar-fields)
 
+;;(def test-names {:app "po"
+;;                 :object-name "POSTD"})
+
+(def test-names {:app "po"
+                 :object-name "PO"})
+
 (defn test-po-resolver
   [obj args context info]
   (let [from-row (aget args "fromRow")
@@ -53,9 +59,9 @@
         res-p (send-graphql-command 
                (aget context "pid")
                #js{:command "fetch"
-                   :args #js{:app "po"
-                             :object-name "postd"
-                             :columns (get-maximo-scalar-fields "POSTD")
+                   :args #js{:app (:app test-names)
+                             :object-name (:object-name test-names)
+                             :columns (get-maximo-scalar-fields (:object-name test-names))
                              :start-row from-row
                              :num-rows num-rows
                              :handle handle
