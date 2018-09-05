@@ -64,7 +64,7 @@
            _num-rows (if has-uniqueid? 1 num-rows)]
        (b/fetch-data cont _start-row _num-rows nil nil))
      (fn [[data _ _]]
-       (map get-fetched-row-data data)))))
+       (filter some? (map get-fetched-row-data data))))))
 
 (defn get-data
   [app-name
