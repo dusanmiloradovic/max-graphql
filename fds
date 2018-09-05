@@ -9,3 +9,10 @@
                                                     :columns #js["ponum" "status" "description"]
                                                     :start-row 0
                                                     :num-rows 10}})
+
+(process-fetch "123" #js{:app "po"
+                                                    :object-name "postd"
+                                                    :columns #js["ponum" "status" "description"]
+                                                    :start-row 0
+                                                    :num-rows 10
+                                             :qbe #js{:status "=APPR"}})

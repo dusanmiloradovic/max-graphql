@@ -11,8 +11,14 @@
 
 ;;rigth now for fetching the data, containers are enough. If I need anything more I will use controls (probably required for subscriptions)
 
-(def reqistered-qbe
-  (atom []))
+(def registered-qbe
+  (atom {}))
+
+(defn data-changed?
+  [container-id]
+  false)
+;;this will be implemented later with mutations
+;;if the qbe has changed, and the data was changed, throw an error
 
 ;;with the idea of not using the controls, I will have to keep the track of the qbes. if the qbe posted with the query is the same as the one registered, I will do nothing. If the qbe posted is different, and the data was changed wihtout commit or rollback, the exception will be thrown
 
@@ -27,11 +33,21 @@
   (let [cont (RelContainer. (@registered-containers parent-id) rel-name)]
     (swap! registered-containers assoc (get-id cont) cont)))
 
+(defn set-qbe
+  [cont qbe]
+  (swap! registered-qbe assoc (c/get-id cont) qbe)
+  (doseq [[k v] qbe]
+    (b/set-qbe cont k v nil nil)))
+
 (defn fetch-data
-  [container-id columns start-row num-rows]
+  [container-id columns start-row num-rows qbe]
   ;; all the graphql error handling needs to be done inline here, so I need promise, but i think capturing will be done in the outermost loop
   (let [cont (@registered-containers container-id)]
     (b/register-columns cont columns nil nil)
+    (if (and qbe (not= qbe (@registered-qbe container-id)))
+      (if (data-changed? container-id)
+        (throw (js/Error. "Data changed, first rollback or save the data"))
+        (set-qbe cont qbe)))
     (.then
      (b/fetch-data cont start-row num-rows nil nil)
      (fn [[data _ _]]

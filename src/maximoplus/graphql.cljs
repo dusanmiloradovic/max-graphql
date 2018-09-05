@@ -96,10 +96,11 @@
         start-row (aget args "start-row")
         num-rows (aget args "num-rows")
         handle (aget args "handle") ;;handle is container id, useful for the paging
+        qbe (aget args "qbe")
         ]
     (let [cont-id (if (and handle (@pr/registered-containers handle)) handle
                       (pr/register-container app-name object-name))
-          fetch-prom (pr/fetch-data cont-id columns start-row num-rows)]
+          fetch-prom (pr/fetch-data cont-id columns start-row num-rows (js->clj qbe))]
       (.then fetch-prom
              (fn [data]
                (send-process #js{:type "command"

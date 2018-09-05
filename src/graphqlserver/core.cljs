@@ -49,6 +49,7 @@
   (let [from-row (aget args "fromRow")
         num-rows (aget args "numRows")
         handle (aget args "_handle")
+        qbe (aget args "qbe")
         res-p (send-graphql-command 
                (aget context "pid")
                #js{:command "fetch"
@@ -58,6 +59,7 @@
                              :start-row from-row
                              :num-rows num-rows
                              :handle handle
+                             :qbe qbe
                              }}
                )]
     (.then res-p
