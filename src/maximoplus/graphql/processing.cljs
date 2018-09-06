@@ -24,13 +24,17 @@
 
 (defn register-container
   [args]
-  (let [object-name (aget args "object-name")
+  (let [relationship (aget args "ralationship")
+        parent-handle (aget args "parent-handle")
+        object-name (aget args "object-name")
         app-name (aget args "app")
         qbe (aget args "qbe")
         uniqueid (when qbe (aget qbe "id"))]
-    (let [cont (if uniqueid
-                 (UniqueMboAppContainer. object-name app-name uniqueid)
-                 (AppContainer. object-name app-name))]
+    (let [cont
+          (if relationship (RelContainer. (@registered-containers parent-handle) relationship)
+              (if uniqueid
+                (UniqueMboAppContainer. object-name app-name uniqueid)
+                (AppContainer. object-name app-name)))]
       (swap! registered-containers assoc (get-id cont) cont )
       (get-id cont))))
 

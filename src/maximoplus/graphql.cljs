@@ -90,10 +90,7 @@
 ;;global login function should hot be required. 
 (defn process-fetch
   [uid args]
-  (let [app-name (aget args "app")
-        object-name (aget args "object-name")
-        columns (aget args "columns")
-        start-row (aget args "start-row")
+  (let [start-row (aget args "start-row")
         num-rows (aget args "num-rows")
         handle (aget args "handle") ;;handle is container id, useful for the paging
         qbe (aget args "qbe")

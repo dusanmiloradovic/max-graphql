@@ -44,11 +44,27 @@
 
 (declare get-maximo-scalar-fields)
 
-;;(def test-names {:app "po"
-;;                 :object-name "POSTD"})
-
 (def test-names {:app "po"
-                 :object-name "PO"})
+                 :object-name "POSTD"
+                 :rel-name "POLINESTD"})
+
+;;(def test-names {:app "po"
+;;                 :object-name "PO" :rel-name "POLINE"})
+(defn process-fetch
+  [res]
+  (let [component-id (first res)
+        _res (rest res)]
+    (clj->js
+     (map
+      (fn [[rownum data flaga]]
+        (into {}
+              (conj
+               (map (fn [[k v]]
+                      [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
+                      )
+                    data)
+               ["_handle" component-id])))
+      _res))))
 
 (defn test-po-resolver
   [obj args context info]
@@ -68,36 +84,48 @@
                              :qbe qbe
                              }}
                )]
-    (.then res-p
-           (fn [res]
-                     (let [component-id (first res)
-                           _res (rest res)]
-                       (clj->js
-                        (map
-                         (fn [[rownum data flaga]]
-                           (into {}
-                                 (conj
-                                  (map (fn [[k v]]
-                                         [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
-                                         )
-                                       data)
-                                  ["_handle" component-id])))
-                         _res))))
-                   )
-    ))
+    (.then res-p process-fetch)))
+
+(defn test-poline-resolver
+  [obj args context info]
+  (let [from-row (aget args "fromRow")
+        num-rows (aget args "numRows")
+        handle (aget args "_handle")
+        qbe (aget args "qbe")
+        res-p (send-graphql-command
+               (aget context "pid")
+               #js{:command "fetch"
+                   :args #js{:relationship (:rel-name test-names)
+                             :columns (get-maximo-scalar-fileds (:rel-name test-names))
+                             :parent-handle (aget obj "_handle")
+                             :start-row from-row
+                             :num-rows num-rows
+                             :handle handle
+                             :qbe qbe
+                             }})
+        ]
+    (.then res-p process-fetch)))
 
 (def resolvers #js{
                    :Query #js{
                               :books
                               ;;(fn [] (throw (AuthenticationError.)))
                               (fn [obj args context info]
-                                (.log js/console info)
+                                (.log js/console obj)
                                 books)
                               :book
                               (fn[obj args context info]
                                 (aget books 0))
                               :po test-po-resolver
-                              }})
+                              }
+                   :POSTD #js{
+                              :books
+                              ;;(fn [] (throw (AuthenticationError.)))
+                              (fn [obj args context info]
+                                (.log js/console obj)
+                                books)
+                              }
+                   })
 
 (defn max-session-check-middleware
   [req res next]
