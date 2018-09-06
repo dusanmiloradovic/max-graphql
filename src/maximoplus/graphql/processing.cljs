@@ -24,7 +24,8 @@
 
 (defn register-container
   [args]
-  (let [relationship (aget args "ralationship")
+  (.log js/console args)
+  (let [relationship (aget args "relationship")
         parent-handle (aget args "parent-handle")
         object-name (aget args "object-name")
         app-name (aget args "app")
@@ -63,7 +64,7 @@
         (throw (js/Error. "Data changed, first rollback or save the data"))
         (set-qbe cont qbe)))
     (.then
-     (let [has-uniqueid? (aget qbe "uniqueid")
+     (let [has-uniqueid? (when qbe (aget qbe "uniqueid"))
            _start-row (if has-uniqueid? 0 start-row)
            _num-rows (if has-uniqueid? 1 num-rows)]
        (b/fetch-data cont _start-row _num-rows nil nil))

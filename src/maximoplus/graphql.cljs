@@ -93,6 +93,7 @@
   (let [start-row (aget args "start-row")
         num-rows (aget args "num-rows")
         handle (aget args "handle") ;;handle is container id, useful for the paging
+        columns (aget args "columns")
         qbe (aget args "qbe")
         ]
     (let [cont-id (if (and handle (@pr/registered-containers handle)) handle

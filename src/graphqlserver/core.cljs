@@ -44,12 +44,14 @@
 
 (declare get-maximo-scalar-fields)
 
-(def test-names {:app "po"
-                 :object-name "POSTD"
-                 :rel-name "POLINESTD"})
-
 ;;(def test-names {:app "po"
-;;                 :object-name "PO" :rel-name "POLINE"})
+;;                 :object-name "POSTD"
+;;                 :rel-name "POLINESTD"})
+
+(def test-names {:app "po"
+                 :object-name "PO"
+                 :rel-name "POLINE"})
+
 (defn process-fetch
   [res]
   (let [component-id (first res)
@@ -96,7 +98,7 @@
                (aget context "pid")
                #js{:command "fetch"
                    :args #js{:relationship (:rel-name test-names)
-                             :columns (get-maximo-scalar-fileds (:rel-name test-names))
+                             :columns (get-maximo-scalar-fields (:rel-name test-names))
                              :parent-handle (aget obj "_handle")
                              :start-row from-row
                              :num-rows num-rows
@@ -125,6 +127,9 @@
                                 (.log js/console obj)
                                 books)
                               }
+                   :PO #js{
+                           :poline test-poline-resolver
+                           }
                    })
 
 (defn max-session-check-middleware

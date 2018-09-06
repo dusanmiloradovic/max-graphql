@@ -11,8 +11,8 @@ type Book {
 type Query {
   books: [Book]
   book(author:String): Book
-  po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
-#  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
+  #po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
 }
 
 #obrisi ovo kada ide u prod, iz gaska
@@ -38,7 +38,7 @@ type PO{
   ponum:String
   description:String
   status:String
-  poline;{POLINE]
+  poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]
   _handle:String
 }
 
