@@ -1,5 +1,5 @@
 (ns maximoplus.graphql.processing
-  (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer]]
+  (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer UniqueMboContainer]]
             [maximoplus.core :as c :refer [get-id get-fetched-row-data]]
             [maximoplus.promises :as p]))
 
@@ -22,27 +22,45 @@
 
 ;;with the idea of not using the controls, I will have to keep the track of the qbes. if the qbe posted with the query is the same as the one registered, I will do nothing. If the qbe posted is different, and the data was changed wihtout commit or rollback, the exception will be thrown
 
+;;too complex, and throws the maximum stack size error. For the time being, just use the uniquembocontainer for the parent and take the relationship to it
+(defn register-rel-container-old
+  [parent-handle parent-id rel-name]
+  (let [parent-cont (@registered-containers parent-handle)]
+    (b/move-to-uniqueid parent-cont parent-id nil nil)
+    ;;if we do just fetch on parent without move, the cursor will stay on the first record
+    (let [cont (RelContainer.  parent-cont rel-name)]
+      (swap! registered-containers assoc (get-id cont) cont)
+      cont)))
+
+(defn register-rel-container
+  [parent-id parent-object-name rel-name ]
+  ;;TODO now i will create the uniquembocotnaiers for each row. That might complicate things during
+  ;;the save. Another option will be the new type of container - like SingleMboContainer, but it will not be reset when the row changes, and it accepts the row number in the constructor
+  (let [u (UniqueMboContainer. parent-object-name parent-id)
+        r (RelContainer. u rel-name)]
+    (swap! registered-containers assoc (get-id r) r)
+    r))
+
+
 (defn register-container
   [args]
-  (.log js/console args)
   (let [relationship (aget args "relationship")
         parent-handle (aget args "parent-handle")
+        paret-object (aget args "parent-object")
+        parent-id (aget args "parent-id")
         object-name (aget args "object-name")
         app-name (aget args "app")
         qbe (aget args "qbe")
         uniqueid (when qbe (aget qbe "id"))]
     (let [cont
-          (if relationship (RelContainer. (@registered-containers parent-handle) relationship)
+          (if relationship (register-rel-container parent-handle parent-id relationship)
               (if uniqueid
                 (UniqueMboAppContainer. object-name app-name uniqueid)
                 (AppContainer. object-name app-name)))]
       (swap! registered-containers assoc (get-id cont) cont )
       (get-id cont))))
 
-(defn register-rel-contanier
-  [parent-id rel-name]
-  (let [cont (RelContainer. (@registered-containers parent-id) rel-name)]
-    (swap! registered-containers assoc (get-id cont) cont)))
+
 
 (defn set-qbe
   [cont qbe]

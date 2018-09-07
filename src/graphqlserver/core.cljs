@@ -8,7 +8,7 @@
    ["uniqid" :as uniqid]
    ["graphql" :refer [buildSchema graphqlSync introspectionQuery]]
    [cljs-node-io.core :as io :refer [slurp spit]]
-   [cljs.core.async :as a :refer [<! put! chan]]
+   [cljs.core.async :as a :refer [<! put! chan promise-chan]]
    [cognitect.transit :as transit])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
@@ -20,6 +20,16 @@
 
 (defn transit-read [x]
   (transit/read transit-reader x))
+
+(def debug-process (atom nil))
+
+(declare open-child-script)
+
+(when (aget (.-env js/process) "DEBUG")
+  (println "debbuging on the port 6554")
+  (reset! debug-process (fork (str js/__dirname "/gscript.js") #js[] #js{:execArgv #js["--inspect=6554" ]}))
+  (.log js/console @debug-process))
+  
 
 (defn get-schema-string
   []
@@ -56,6 +66,7 @@
   [res]
   (let [component-id (first res)
         _res (rest res)]
+    (println "processing " _res)
     (clj->js
      (map
       (fn [[rownum data flaga]]
@@ -88,32 +99,97 @@
                )]
     (.then res-p process-fetch)))
 
+(def rel-temp-promises (atom {}))
+
+;;this is too complicated, and throws maximum call size exceeded
+;;I am making MVP, leave this just in case someone requests this functionality(all the lines to have the same handle)
+(defn test-poline-resolver-old
+  [obj args context info]
+  (let [from-row (aget args "fromRow")
+        num-rows (aget args "numRows")
+        handle (aget args "_handle")
+        parent-handle (aget obj "_handle")
+        parent-id (aget obj "id")
+        rel-name (:rel-name test-names)
+;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
+        pid (aget context "pid")
+        qbe (aget args "qbe")
+        _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
+        command-object #js{:command "fetch"
+                           :args #js{:relationship rel-name
+                                     :columns (get-maximo-scalar-fields (:rel-name test-names))
+                                     :parent-handle parent-handle 
+                                     :parent-id (aget obj "id")
+                                     :start-row from-row
+                                     :num-rows num-rows
+                                     :handle handle
+                                     :qbe qbe
+                                     }}
+        res-p (if-let [ex-prom (@rel-temp-promises {:pid pid :parent-handle parent-handle :rel-name rel-name})]
+                (let [new-prom (.then ex-prom
+                                      (fn [_]
+                                        (let [context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })]
+                                          (println "sending command for parent-id " parent-id " and context handle " context-handle)
+                                          (when-not (aget command-object "handle")
+                                            (aset (aget command-object "args" ) "handle" context-handle))
+                                          (send-graphql-command pid command-object))))]
+                  (swap! rel-temp-promises assoc
+                         {:pid pid :parent-handle parent-handle :rel-name rel-name}
+                         new-prom)
+                  new-prom)
+                (let [_ (println "sending command for parent-id " parent-id)
+                      rs (send-graphql-command pid command-object)
+                      new-prm (.then rs
+                                     (fn [rs]
+                                       (swap! (aget context "rel-handles")
+                                              assoc
+                                              {:parent-handle parent-handle :rel-name rel-name}
+                                              (first rs))
+                                       rs
+                                       ))]
+                  (swap! rel-temp-promises assoc
+                         {:pid pid :parent-handle parent-handle :rel-name rel-name}
+                         new-prm)
+                  new-prm))
+        ]
+    (.then res-p
+           (fn [res]
+             (println "got the response for the parent id " parent-id)
+             (process-fetch res)))))
+
+;;here every line will have a different handle. Think about the save, how it should work (this will go to the relationship to the parent uniquembocontainer)
 (defn test-poline-resolver
   [obj args context info]
   (let [from-row (aget args "fromRow")
         num-rows (aget args "numRows")
         handle (aget args "_handle")
+        parent-handle (aget obj "_handle")
+        parent-id (aget obj "id")
+        rel-name (:rel-name test-names)
+;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
+        pid (aget context "pid")
         qbe (aget args "qbe")
-        res-p (send-graphql-command
-               (aget context "pid")
-               #js{:command "fetch"
-                   :args #js{:relationship (:rel-name test-names)
-                             :columns (get-maximo-scalar-fields (:rel-name test-names))
-                             :parent-handle (aget obj "_handle")
-                             :start-row from-row
-                             :num-rows num-rows
-                             :handle handle
-                             :qbe qbe
-                             }})
+        _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
+        command-object #js{:command "fetch"
+                           :args #js{:relationship rel-name
+                                     :columns (get-maximo-scalar-fields (:rel-name test-names))
+                                     :parent-handle parent-handle 
+                                     :parent-id (aget obj "id")
+                                     :start-row from-row
+                                     :num-rows num-rows
+                                     :parent-object (:object-name test-names)
+                                     :handle handle
+                                     :qbe qbe
+                                     }}
+        res-p (send-graphql-command pid command-object) 
         ]
-    (.then res-p process-fetch)))
+    (.then res-p prcess-fetch)))
 
 (def resolvers #js{
                    :Query #js{
                               :books
                               ;;(fn [] (throw (AuthenticationError.)))
                               (fn [obj args context info]
-                                (.log js/console obj)
                                 books)
                               :book
                               (fn[obj args context info]
@@ -123,8 +199,7 @@
                    :POSTD #js{
                               :books
                               ;;(fn [] (throw (AuthenticationError.)))
-                              (fn [obj args context info]
-                                (.log js/console obj)
+                              (fn [obj args context info] 
                                 books)
                               }
                    :PO #js{
@@ -193,7 +268,10 @@
                     :context (fn [obj]
                                (let [req-arg (aget obj "req")
                                      session (aget req-arg "session")]
-                                 #js{:pid (get-maximoplus-pid session)}))} )
+                                 #js{:pid (get-maximoplus-pid session)
+                                     :rel-handles (atom {});;in one call the line resolver should all call through one rel container, fot the parent handle, always the same handle (container)
+                                     :rel-temp-channels (atom {});;should ensure sequential calling of rel container operations
+                                     }))} )
         app (express)
         ]
     (.use app (session #js{:secret "keyboard cat" :cookie #js {:httpOnly false}}))
@@ -270,7 +348,10 @@
 (defn open-child-script
   [req-session credentials cb]
   ;;this will be called from the login middleware (or the login function), when the login occurs, callback will be called with the maximo session id
-  (let [prc (fork "out/gscript.js")
+  (let [debug? (aget (.-env js/process) "DEBUG")
+        prc (if debug?
+              @debug-process
+              (fork "out/gscript.js"))
         pid (.-pid prc)]
     (.on prc "message" (fn [m]
                          (process-child-message m prc cb)
@@ -299,7 +380,6 @@
   ;;this will send the message of the type "command" to the child process with the command object containing all the necessary things
   ;;inernally, I will create the channel, and the id of it will be sent to the child process. Once the command is finished, it will send back the results
   ;;with this id, and the promise will be resolved
-  (.log js/console command-object)
   (let [uid (uniqid)
         ch (chan)]
     (swap! pending-messages assoc uid ch)
@@ -379,7 +459,6 @@
   ;;the implemntaiton looks naive, but here is the reasoning:
   ;;There will be no nested mutations in GraphQL for Maixmo
   ;;and subscriptions are always only one level deep (and then the data can be captured with the simple query
-  (.log js/console "bla")
   (if (= "Subscription" object-name)
     :subscription
     (if (= "Mutation" object-name)
