@@ -20,6 +20,8 @@
 
 (c/setGlobalFunction "globalRemoveWaitCursor" (fn [_]))
 
+(aset js/global "alert" (fn [text] (println "!!!!!" text ))) ;;temporarily
+
 (def transit-writer (transit/writer :json))
 
 (defn transit-write [x]
@@ -35,7 +37,8 @@
     (.send js/process message)
     (do
       (.log js/console "fake message sending")
-      (.log js/console message))))
+;;      (.log js/console message)
+      )))
 
 (.on js/process "uncaughtException"
      (fn [err] (u/debug "!" err)))
@@ -119,11 +122,11 @@
        (when-let [type (aget m "type")]
          (let [val (aget m "val")
                uid (aget m "uid")]
-           (.log js/console "processing pparent message")
-           (.log js/console (str "type=" type))
-           (.log js/console (str "value=" val))
-           (.log js/console m)
-           (.log js/console "++++++++++++++++++++++++")
+        ;;   (.log js/console "processing pparent message")
+;;           (.log js/console (str "type=" type))
+  ;;         (.log js/console (str "value=" val))
+    ;;       (.log js/console m)
+      ;;     (.log js/console "++++++++++++++++++++++++")
            (condp = type
              "kill" (do
                       (.log js/console "killing child process")

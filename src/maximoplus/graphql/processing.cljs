@@ -46,14 +46,14 @@
   [args]
   (let [relationship (aget args "relationship")
         parent-handle (aget args "parent-handle")
-        paret-object (aget args "parent-object")
+        parent-object (aget args "parent-object")
         parent-id (aget args "parent-id")
         object-name (aget args "object-name")
         app-name (aget args "app")
         qbe (aget args "qbe")
         uniqueid (when qbe (aget qbe "id"))]
     (let [cont
-          (if relationship (register-rel-container parent-handle parent-id relationship)
+          (if relationship (register-rel-container  parent-id parent-object relationship)
               (if uniqueid
                 (UniqueMboAppContainer. object-name app-name uniqueid)
                 (AppContainer. object-name app-name)))]

@@ -183,7 +183,7 @@
                                      }}
         res-p (send-graphql-command pid command-object) 
         ]
-    (.then res-p prcess-fetch)))
+    (.then res-p process-fetch)))
 
 (def resolvers #js{
                    :Query #js{
