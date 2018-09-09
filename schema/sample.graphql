@@ -104,13 +104,13 @@ input POLINESTDQBE{
 }
 
 type ALNDOMAIN{
-  id;ID
+  id:ID
   value:String
   description:String
 }
 
 input ALNDOMAINQBE{
-  id;ID
+  id:ID
   value:String
   description:String
 }
