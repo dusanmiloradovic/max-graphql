@@ -229,11 +229,11 @@
                               }
                    :POSTD #js{
                               :polinestd test-poline-resolver
-                              :list-status test-status-domain-resolver
+                              :list_status test-status-domain-resolver
                               }
                    :PO #js{
                            :poline test-poline-resolver
-                           :list-status test-status-domain-resolver
+                           :list_status test-status-domain-resolver
                            }
                    })
 
