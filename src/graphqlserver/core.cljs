@@ -202,7 +202,7 @@
         _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
         command-object #js{:command "fetch"
                            :args #js{:list-column "status"
-                                     :columns (get-maximo-scalar-fields (:rel-name test-names))
+                                     :columns (get-maximo-scalar-fields "ALNDOMAIN")
                                      :parent-handle parent-handle 
                                      :parent-id (aget obj "id")
                                      :start-row from-row
