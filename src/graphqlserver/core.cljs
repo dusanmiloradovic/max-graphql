@@ -188,6 +188,34 @@
         ]
     (.then res-p process-fetch)))
 
+(defn test-status-domain-resolver
+  [obj args context info]
+  (let [from-row (aget args "fromRow")
+        num-rows (aget args "numRows")
+        handle (aget args "_handle")
+        parent-handle (aget obj "_handle")
+        parent-id (aget obj "id")
+        rel-name (:rel-name test-names)
+;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
+        pid (aget context "pid")
+        qbe (aget args "qbe")
+        _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
+        command-object #js{:command "fetch"
+                           :args #js{:list-column "status"
+                                     :columns (get-maximo-scalar-fields (:rel-name test-names))
+                                     :parent-handle parent-handle 
+                                     :parent-id (aget obj "id")
+                                     :start-row from-row
+                                     :num-rows num-rows
+                                     :parent-object (:object-name test-names)
+                                     :handle handle
+                                     :qbe qbe
+                                     }}
+        res-p (send-graphql-command pid command-object) 
+        ]
+    (.then res-p process-fetch))
+  )
+
 (def resolvers #js{
                    :Query #js{
                               :books
@@ -201,9 +229,11 @@
                               }
                    :POSTD #js{
                               :polinestd test-poline-resolver
+                              :list-status test-status-domain-resolver
                               }
                    :PO #js{
                            :poline test-poline-resolver
+                           :list-status test-status-domain-resolver
                            }
                    })
 
