@@ -38,7 +38,9 @@
                    (.log js/console (.-statusCode resp))
                    (error-callback [(transit-read body) 0 (.-statusCode resp)])
                    )
-                 (callback [(transit-read body) 0 (.-statusCode resp)]))))))
+                 (let [tr-resp  [(transit-read body) 0 (.-statusCode resp)]]
+                  ;; (println tr-resp)
+                   (callback tr-resp)))))))
 
 (deftype Node []
   INet

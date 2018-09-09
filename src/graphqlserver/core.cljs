@@ -54,13 +54,13 @@
 
 (declare get-maximo-scalar-fields)
 
-;;(def test-names {:app "po"
-;;                 :object-name "POSTD"
-;;                 :rel-name "POLINESTD"})
-
 (def test-names {:app "po"
-                 :object-name "PO"
-                 :rel-name "POLINE"})
+                 :object-name "POSTD"
+                 :rel-name "POLINESTD"})
+
+;;(def test-names {:app "po"
+;;                 :object-name "PO"
+;;                 :rel-name "POLINE"})
 
 (defn process-fetch
   [res]
@@ -160,6 +160,9 @@
 ;;here every line will have a different handle. Think about the save, how it should work (this will go to the relationship to the parent uniquembocontainer)
 (defn test-poline-resolver
   [obj args context info]
+  (.log js/console obj)
+  (.log js/console args)
+  (.log js/console "*****************************")
   (let [from-row (aget args "fromRow")
         num-rows (aget args "numRows")
         handle (aget args "_handle")
@@ -197,10 +200,7 @@
                               :po test-po-resolver
                               }
                    :POSTD #js{
-                              :books
-                              ;;(fn [] (throw (AuthenticationError.)))
-                              (fn [obj args context info] 
-                                books)
+                              :polinestd test-poline-resolver
                               }
                    :PO #js{
                            :poline test-poline-resolver

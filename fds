@@ -16,3 +16,11 @@
                                                     :start-row 0
                                                     :num-rows 10
                                              :qbe #js{:status "=APPR"}})
+
+(process-fetch "123"
+                                   #js{:start-row 0
+                                       :num-rows 10
+                                       :columns #js["value" "description"]
+                                       :parent-object "POSTD"
+                                       :parent-id 2232796
+                                       :list-column "status"})

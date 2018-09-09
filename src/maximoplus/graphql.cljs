@@ -37,7 +37,7 @@
     (.send js/process message)
     (do
       (.log js/console "fake message sending")
-;;      (.log js/console message)
+      (.log js/console message)
       )))
 
 (.on js/process "uncaughtException"

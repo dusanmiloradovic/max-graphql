@@ -41,10 +41,19 @@
     (swap! registered-containers assoc (get-id r) r)
     r))
 
+(defn register-list-container
+  [parent-id parent-object-name column-name]
+  (let [u (UniqueMboContainer. parent-object-name parent-id)
+        r (ListContainer. u column-name)]
+    (swap! registered-containers assoc (get-id r) r)
+    r))
+
+;;TODO both for all the containers, let the user chooses the type and attributes from Maxiom when building a schema
 
 (defn register-container
   [args]
   (let [relationship (aget args "relationship")
+        list-column (aget args "list-column")
         parent-handle (aget args "parent-handle")
         parent-object (aget args "parent-object")
         parent-id (aget args "parent-id")
@@ -53,10 +62,12 @@
         qbe (aget args "qbe")
         uniqueid (when qbe (aget qbe "id"))]
     (let [cont
-          (if relationship (register-rel-container  parent-id parent-object relationship)
-              (if uniqueid
-                (UniqueMboAppContainer. object-name app-name uniqueid)
-                (AppContainer. object-name app-name)))]
+          (if list-column
+            (register-list-container parent-id parent-object list-column)
+            (if relationship (register-rel-container  parent-id parent-object relationship)
+                (if uniqueid
+                  (UniqueMboAppContainer. object-name app-name uniqueid)
+                  (AppContainer. object-name app-name))))]
       (swap! registered-containers assoc (get-id cont) cont )
       (get-id cont))))
 
