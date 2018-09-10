@@ -1,0 +1,21 @@
+* Tasks
+** Maximo
+*** TODO Change web.xml in production to point to the sitegraphics folder
+***
+** Standalone Sitegraphics
+*** TODO Put Google Map from Anish for the Bab
+
+** GraphQL
+*** TODO Implement the automatic Query resolver creation based on the schema
+*** TODO Identify all the mutations and the subscriptions system could automatically implememnt
+*** TODO Preparation for the visual schema editor - chosen field and objects should be stored on the database. Use the database that doesn't have to be installed, or simply plain file
+*** TODO Implement the format for storing the chosen objects, fields , relationship, lists and chosen mutations
+*** TODO Implement the transforment from the internal Maximo GraphQL format to GraphQL schema
+*** TODO Implement the front end chosing
+*** TODO Implement the test mutations
+*** TODO Implement the test subscriptions
+*** TODO Check the protocols for the subscriptions, if possible give both Eevnt source and web sockets
+
+
+
+
