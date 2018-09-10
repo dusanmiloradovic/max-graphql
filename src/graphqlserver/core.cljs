@@ -54,13 +54,13 @@
 
 (declare get-maximo-scalar-fields)
 
-(def test-names {:app "po"
-                 :object-name "POSTD"
-                 :rel-name "POLINESTD"})
-
 ;;(def test-names {:app "po"
-;;                 :object-name "PO"
-;;                 :rel-name "POLINE"})
+;;                 :object-name "POSTD"
+;;                 :rel-name "POLINESTD"})
+
+(def test-names {:app "po"
+                 :object-name "PO"
+                 :rel-name "POLINE"})
 
 (defn process-fetch
   [res]
@@ -494,6 +494,20 @@
     (if (= "Mutation" object-name)
         :mutation
         :query)))
+
+(defn get-auto-resolvers
+  ;;TODO just started
+  []
+  (into {}
+        (filter (fn [[k v]]
+                  (not (empty? v)))
+                (loop [ft (get-function-type-signatures) res {}]
+                  (if (empty? ft)
+                    res
+                    (let [curr (first ft)]
+                      (recur (rest ft) 
+                             (assoc res (:name curr) 
+                                    (reduce conj [] (:fields curr))))))))))
 
 (defn ^:dev/before-load stop []
   (js/console.log "stop")
