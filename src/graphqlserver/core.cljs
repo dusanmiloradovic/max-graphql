@@ -495,7 +495,94 @@
         :mutation
         :query)))
 
+(defn get-app-resolver-function
+ [type field return-type]
+ (fn [obj args context info]
+   (let [from-row (aget args "fromRow")
+         num-rows (aget args "numRows")
+         handle (aget args "_handle")
+         qbe (aget args "qbe")
+         res-p (send-graphql-command 
+                (aget context "pid")
+                #js{:command "fetch"
+                    :args #js{:app field
+                              :object-name return-type
+                              :columns (get-maximo-scalar-fields return-type)
+                              :start-row from-row
+                              :num-rows num-rows
+                              :handle handle
+                              :qbe qbe
+                              }}
+                )]
+     (.then res-p process-fetch))))
+
+(defn get-list-domain-resolver-function
+  [type field return-type]
+  (fn  [obj args context info]
+    (let [from-row (aget args "fromRow")
+          num-rows (aget args "numRows")
+          handle (aget args "_handle")
+          parent-handle (aget obj "_handle")
+          parent-id (aget obj "id")
+          rel-name (:rel-name test-names)
+          ;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
+          pid (aget context "pid")
+          qbe (aget args "qbe")
+          _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
+          command-object #js{:command "fetch"
+                             :args #js{:list-column (aget (.split field "-") 1)
+                                       :columns (get-maximo-scalar-fields return-type)
+                                       :parent-handle parent-handle 
+                                       :parent-id (aget obj "id")
+                                       :start-row from-row
+                                       :num-rows num-rows
+                                       :parent-object type
+                                       :handle handle
+                                       :qbe qbe
+                                       }}
+          res-p (send-graphql-command pid command-object) 
+          ]
+      (.then res-p process-fetch))))
+
+(defn get-rel-resolver-function
+  [type field return-type]
+  (fn   [obj args context info]
+    (let [from-row (aget args "fromRow")
+          num-rows (aget args "numRows")
+          handle (aget args "_handle")
+          parent-handle (aget obj "_handle")
+          parent-id (aget obj "id")
+          rel-name (:rel-name test-names)
+          ;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
+          pid (aget context "pid")
+          qbe (aget args "qbe")
+          _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
+          command-object #js{:command "fetch"
+                             :args #js{:relationship rel-name
+                                       :columns (get-maximo-scalar-fields (:rel-name test-names))
+                                       :parent-handle parent-handle 
+                                       :parent-id (aget obj "id")
+                                       :start-row from-row
+                                       :num-rows num-rows
+                                       :parent-object (:object-name test-names)
+                                       :handle handle
+                                       :qbe qbe
+                                       }}
+          res-p (send-graphql-command pid command-object) 
+          ]
+      (.then res-p process-fetch))))
+
+(defn get-resolver-function
+  [type field return-type]
+  ;;For queries, we return appcontainer(if it is below Query type, or relationships and lists below
+  (if (= type "Query");;top level, always app container
+    (get-app-resolver-function type field return-type)
+    (if (.startsWith field "list_")
+      (get-list-domain-resolver-function type field return-type)
+      (ger-rel-resolver-function type field return-type))))
+
 (defn get-auto-resolvers
+  ;;for the time being, just for the queries
   []
   (reduce
    (fn[m v]
@@ -504,7 +591,9 @@
        (assoc m (:name v)
               (reduce (fn[mm vv]
                         (assoc mm (:name vv)
-                               [(:name v) (:name vv) (:type vv)])) {}  (:fields v))))) {}
+                               (get-resolver-function (:name v) (:name vv) (:type vv))
+                               ;;[(:name v) (:name vv) (:type vv)]
+                               )) {}  (:fields v))))) {}
    (get-function-type-signatures)))
 
 
