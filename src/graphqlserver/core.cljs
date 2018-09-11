@@ -496,18 +496,17 @@
         :query)))
 
 (defn get-auto-resolvers
-  ;;TODO just started
   []
-  (into {}
-        (filter (fn [[k v]]
-                  (not (empty? v)))
-                (loop [ft (get-function-type-signatures) res {}]
-                  (if (empty? ft)
-                    res
-                    (let [curr (first ft)]
-                      (recur (rest ft) 
-                             (assoc res (:name curr) 
-                                    (reduce conj [] (:fields curr))))))))))
+  (reduce
+   (fn[m v]
+     (if (empty? (:fields v))
+       m
+       (assoc m (:name v)
+              (reduce (fn[mm vv]
+                        (assoc mm (:name vv)
+                               [(:name v) (:name vv) (:type vv)])) {}  (:fields v))))) {}
+   (get-function-type-signatures)))
+
 
 (defn ^:dev/before-load stop []
   (js/console.log "stop")
