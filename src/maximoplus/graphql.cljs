@@ -8,6 +8,7 @@
             [maximoplus.net.node :refer [Node]]
             [maximoplus.graphql.processing :as pr]
             [cognitect.transit :as transit]
+            ["os-locale" :refer [sync]]
 )
   (:require-macros [maximoplus.macros :as mm :refer [def-comp googbase kk! kk-nocb! kk-branch-nocb! p-deferred p-deferred-on custom-this kc!]]
                    [cljs.core.async.macros :refer [go]]))
@@ -20,6 +21,7 @@
 
 (c/setGlobalFunction "globalRemoveWaitCursor" (fn [_]))
 
+
 (aset js/global "alert" (fn [text] (println "!!!!!" text ))) ;;temporarily
 
 (def transit-writer (transit/writer :json))
@@ -28,6 +30,8 @@
   ;use transit to create json from clojurescript object
   (transit/write transit-writer x)
   )
+
+(def os-locale (sync))
 
 (defn send-process
   [message]
@@ -114,10 +118,19 @@
   ;;metadata will be the child field of the object, so the handle will always be defined becuase will
   (let [handle (aget args "handle");;same as parent-handle for rel containers
         columns (aget args "columns")
-        metadata (get-metadata handle columns)]
+        metadata (pr/get-metadata handle columns)]
     (send-process #js {:type "command"
                        :uid uid
                        :val (transit-write metadata)})))
+
+(defn normalize-column
+  [container-id column-name val]
+  ;;transorms maximo data to graphql data, right now only floats are affected
+  (let [numeric? (:numeric (c/get-column-metadata container-id column-name))
+        ]
+    
+    )
+  )
 
 (defn process-command
   [uid val]

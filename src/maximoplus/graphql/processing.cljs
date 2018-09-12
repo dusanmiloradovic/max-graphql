@@ -1,6 +1,6 @@
 (ns maximoplus.graphql.processing
   (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer UniqueMboContainer]]
-            [maximoplus.core :as c :refer [get-id get-fetched-row-data]]
+            [maximoplus.core :as c :refer [get-id get-fetched-row-data get-column-metadata]]
             [maximoplus.promises :as p]))
 
 (def registered-containers
