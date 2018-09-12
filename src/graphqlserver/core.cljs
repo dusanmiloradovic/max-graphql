@@ -216,15 +216,15 @@
     (.then res-p process-fetch))
   )
 
-(def resolvers #js{
+(def resolvers-manual #js{
                    :Query #js{
-                              :books
-                              ;;(fn [] (throw (AuthenticationError.)))
-                              (fn [obj args context info]
-                                books)
-                              :book
-                              (fn[obj args context info]
-                                (aget books 0))
+;;                              :books
+;;                              ;;(fn [] (throw (AuthenticationError.)))
+;;                              (fn [obj args context info]
+;;                                books)
+;;                              :book
+;;                              (fn[obj args context info]
+;;                                (aget books 0))
                               :po test-po-resolver
                               }
                    :POSTD #js{
@@ -284,13 +284,15 @@
 
 (def running (atom nil)) ;;so we can stop and start from repl
 
+(declare get-auto-resolvers)
+
 (defn main
   []
   (let [schema (get-schema-string)
         typedefs (gql schema)
         server (ApolloServer.
                 #js{:typeDefs typedefs
-                    :resolvers resolvers
+                    :resolvers (get-auto-resolvers)
                     :playground #js{:settings #js{"editor.theme" "light"
                                                   "request.credentials" "same-origin"
                                                   }
@@ -579,22 +581,23 @@
     (get-app-resolver-function type field return-type)
     (if (.startsWith field "list_")
       (get-list-domain-resolver-function type field return-type)
-      (ger-rel-resolver-function type field return-type))))
+      (get-rel-resolver-function type field return-type))))
 
 (defn get-auto-resolvers
   ;;for the time being, just for the queries
   []
-  (reduce
-   (fn[m v]
-     (if (empty? (:fields v))
-       m
-       (assoc m (:name v)
-              (reduce (fn[mm vv]
-                        (assoc mm (:name vv)
-                               (get-resolver-function (:name v) (:name vv) (:type vv))
-                               ;;[(:name v) (:name vv) (:type vv)]
-                               )) {}  (:fields v))))) {}
-   (get-function-type-signatures)))
+  (clj->js
+   (reduce
+    (fn[m v]
+      (if (empty? (:fields v))
+        m
+        (assoc m (:name v)
+               (reduce (fn[mm vv]
+                         (assoc mm (:name vv)
+                                (get-resolver-function (:name v) (:name vv) (:type vv))
+                                ;;[(:name v) (:name vv) (:type vv)]
+                                )) {}  (:fields v))))) {}
+    (get-function-type-signatures))))
 
 
 (defn ^:dev/before-load stop []
