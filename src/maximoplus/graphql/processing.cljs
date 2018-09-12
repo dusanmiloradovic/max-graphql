@@ -115,3 +115,9 @@
 
   ;;if there is parent-object-id, relationship argument is required - we create the RelContainer
   )
+
+
+(defn get-metadata
+  [container-id columns]
+  (map (fn [col] (get-column-metadata container-id col))
+       columns))

@@ -109,12 +109,23 @@
                                  :val (transit-write
                                        (conj data cont-id))}))))))
 
+(defn process-metadata
+  [uid args]
+  ;;metadata will be the child field of the object, so the handle will always be defined becuase will
+  (let [handle (aget args "handle");;same as parent-handle for rel containers
+        columns (aget args "columns")
+        metadata (get-metadata handle columns)]
+    (send-process #js {:type "command"
+                       :uid uid
+                       :val (transit-write metadata)})))
+
 (defn process-command
   [uid val]
   (let [command (aget val "command")
         args (aget val "args")]
     (condp = command
       "fetch" (process-fetch uid args)
+      "metadata" (process-metadata uid args)
       :default)))
 
 (.on js/process "message"

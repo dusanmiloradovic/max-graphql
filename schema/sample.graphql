@@ -9,10 +9,10 @@
 # The "Query" type is the root of all GraphQL queries.
 # (A "Mutation" type will be covered later on.)
 type Query {
-#  books: [Book]
- # book(author:String): Book
- po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
-  #po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
+  #  books: [Book]
+  # book(author:String): Book
+  # po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
 }
 
 #obrisi ovo kada ide u prod, iz gaska
