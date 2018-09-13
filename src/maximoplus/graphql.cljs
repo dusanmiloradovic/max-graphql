@@ -45,7 +45,7 @@
 
 (defn number-from-string
   [num]
-  (.replaceAll num thousands-sep-regex ""))
+  (.replace num thousands-sep-regex ""))
 
 (defn send-process
   [message]
@@ -129,7 +129,7 @@
         val
         (if decimal?
           (js/parseFloat (number-from-string val))
-          (js/parseInt (number-from-string-val)))))
+          (js/parseInt (number-from-string val)))))
     val))
 
 (defn normalize-data-object
@@ -142,7 +142,7 @@
 (defn normalize-data-bulk
   [container-id data]
   (map (fn [[rownum data flags]]
-         [rownum (normalize-data-object data) flags])
+         [rownum (normalize-data-object container-id data) flags])
        data))
 
 (defn process-fetch
@@ -161,7 +161,7 @@
                (send-process #js{:type "command"
                                  :uid uid
                                  :val (transit-write
-                                       (conj (normalize-data-bulk data) cont-id))}))))))
+                                       (conj (normalize-data-bulk cont-id data) cont-id))}))))))
 
 (defn process-metadata
   [uid args]
