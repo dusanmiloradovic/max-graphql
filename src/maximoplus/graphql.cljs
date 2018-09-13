@@ -167,11 +167,13 @@
 (defn process-metadata
   [uid args]
   ;;metadata will be the child field of the object, so the handle will always be defined becuase will
+  (println "processing metadata on script " args)
   (let [handle (aget args "handle");;same as parent-handle for rel containers
         columns (aget args "columns")
         metadata (pr/get-metadata handle columns)]
     (.then metadata
            (fn [_metadata]
+             (println "got script metadta " _metadata)
              (send-process #js {:type "command"
                                 :uid uid
                                 :val (transit-write _metadata)})))))

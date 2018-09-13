@@ -81,8 +81,9 @@
 
 (defn process-metadata
   [res]
+  (println "Processing meta " res)
   (clj->js
-   (loop [mdt mdt rez {}]
+   (loop [mdt res rez {}]
      (if (empty? mdt)
        rez
        (let [rr (first rez)]
@@ -485,6 +486,18 @@
                  (first)) "fields")))
   )
 
+(defn get-meta-columns
+  [meta-type]
+  (clj->js
+   (map (fn [t] (:name (get-field-data t)))
+        (aget
+         (->>
+          (get-filtered-types)
+          (filter (fn [t]
+                    (= meta-type (aget t "name"))
+                    ))
+          (first)) "fields"))))
+
 (defn get-maximo-scalar-fields
   [gql-type]
   ;;this will be used in resolver to create the list of fields to fetch from the container. The automatically created resolver will use this.
@@ -587,20 +600,33 @@
   [type field return-type]
   (fn [obj args context info]
     (let [handle (aget obj "_handle")
+          pid (aget context "pid")
           command-object #js{:command "metadata"
-                             :columns (get-maximo-scalar-fields return-type)
-                             :handle handle}
+                             :args #js{:columns (get-meta-columns return-type)
+                                       :handle handle
+                                       }}
           res-p (send-graphql-command pid command-object)]
       (.then res-p process-metadata))))
 
+(defn get-column-meta-resolver-function
+  [field]
+  (fn [obj args context info]
+    (println "calling column meta resolver function for " field " and " obj)
+    (aget obj field)))
+
 (defn get-resolver-function
   [type field return-type]
+  (println "getting the resolver function for " type " and " field " and " return-type)
   ;;For queries, we return appcontainer(if it is below Query type, or relationships and lists below
-  (if (= type "Query");;top level, always app container
-    (get-app-resolver-function type field return-type)
-    (if (.startsWith field "list_")
-      (get-list-domain-resolver-function type field return-type)
-      (get-rel-resolver-function type field return-type))))
+  (if (= "ColumnMetadata" return-type)
+      (get-column-meta-resolver-function field)
+      (if (= type "Query");;top level, always app container
+        (get-app-resolver-function type field return-type)
+        (if (.startsWith field "list_")
+          (get-list-domain-resolver-function type field return-type)
+          (if (= "_metadata" field)
+            (get-metadata-resolver-function type field return-type)
+            (get-rel-resolver-function type field return-type))))))
 
 (defn get-auto-resolvers
   ;;for the time being, just for the queries
@@ -617,7 +643,6 @@
                                 ;;[(:name v) (:name vv) (:type vv)]
                                 )) {}  (:fields v))))) {}
     (get-function-type-signatures))))
-
 
 (defn ^:dev/before-load stop []
   (js/console.log "stop")

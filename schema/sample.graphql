@@ -35,16 +35,16 @@ input POSTDQBE{
 }
 
 type ColumnMetadata{
-  attributeName String
+  attributeName:String
   remarks:String
-  title String
-  persistent Boolean
-  isALNDomain Boolean
-  domainId String
-  hasLD Boolean
-  maxType String
-  length Int
-  scale Int
+  title:String
+  persistent:Boolean
+  isALNDomain:Boolean
+  domainId:String
+  hasLD:Boolean
+  maxType:String
+  length:Int
+  scale:Int
 }
 
 type POMetadata{
