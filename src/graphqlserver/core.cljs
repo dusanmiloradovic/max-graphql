@@ -66,7 +66,6 @@
   [res]
   (let [component-id (first res)
         _res (rest res)]
-    (println "processing " _res)
     (clj->js
      (map
       (fn [[rownum data flaga]]
@@ -81,13 +80,12 @@
 
 (defn process-metadata
   [res]
-  (println "Processing meta " res)
   (clj->js
    (loop [mdt res rez {}]
      (if (empty? mdt)
        rez
-       (let [rr (first rez)]
-         (recur (rest mdt) (assoc rez (:attributeName rr) rr)))))))
+       (let [rr (first mdt)]
+         (recur (rest mdt) (assoc rez (.toLowerCase (:attributeName rr)) rr)))))))
 
 (defn test-po-resolver
   [obj args context info]
@@ -611,12 +609,10 @@
 (defn get-column-meta-resolver-function
   [field]
   (fn [obj args context info]
-    (println "calling column meta resolver function for " field " and " obj)
     (aget obj field)))
 
 (defn get-resolver-function
   [type field return-type]
-  (println "getting the resolver function for " type " and " field " and " return-type)
   ;;For queries, we return appcontainer(if it is below Query type, or relationships and lists below
   (if (= "ColumnMetadata" return-type)
       (get-column-meta-resolver-function field)
