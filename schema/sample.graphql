@@ -20,6 +20,7 @@ type POSTD{
   id:ID
   ponum:String
   description:String
+  orderdate:String #TODO this should be GraphQL date (external package)
   status:String
   _handle:String
   polinestd(fromRow:Int,numRows:Int, _handle:String, qbe:POLINESTDQBE):[POLINESTD]
@@ -38,6 +39,7 @@ type PO{
   ponum:String
   description:String
   status:String
+  orderdate:String #TODO this should be GraphQL date (external package)
   poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]
   list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN] 
   _handle:String

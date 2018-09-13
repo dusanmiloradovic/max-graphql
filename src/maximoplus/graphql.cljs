@@ -33,6 +33,20 @@
 
 (def os-locale (sync))
 
+(def thousands-sep-symbol
+  (let [smpl (.toLocaleString 1111)]
+    (aget smpl 1)))
+
+(def comma-symbol
+  (if (= thousands-sep-symbol ".") "," "."))
+
+(def thousands-sep-regex
+  (js/RegExp. (str "/" thousands-sep-symbol "/g")))
+
+(defn number-from-string
+  [num]
+  (.replaceAll num thousands-sep-regex ""))
+
 (defn send-process
   [message]
   ;;the script should communicate with the parent script through process.send
@@ -94,7 +108,43 @@
 ;;                                    (fn [err]
 ;;                                      (.log js/console "Not logged in error")
 ;;                                      (.loj js/console err)))))
-;;global login function should hot be required. 
+;;global login function should hot be required.
+
+(defn normalize-column
+  [container-id column-name val]
+  ;;transorms maximo data to graphql data, right now only floats are affected
+  ;;no option to chose, decimal from maximo will be always float in GraphQL
+  (if-let [column-meta (c/get-column-metadata container-id column-name)]
+    (let [numeric? (:numeric column-meta)
+          max-type (:maxType column-meta)
+          decimal? (or
+                    (= "AMOUNT" max-type)
+                    (= "FLOAT" max-type)
+                    (= "DECIMAL" max-type))
+          integer? (or
+                    (= "SMALLINT" max-type)
+                    (= "BIGINT" max-type)
+                    (= "INTEGER" max-type))]
+      (if-not numeric?;;still no support for dates
+        val
+        (if decimal?
+          (js/parseFloat (number-from-string val))
+          (js/parseInt (number-from-string-val)))))
+    val))
+
+(defn normalize-data-object
+  [container-id val]
+  (reduce-kv (fn [m k v]
+               (assoc m k (normalize-column container-id k v))
+               )
+             {} val))
+
+(defn normalize-data-bulk
+  [container-id data]
+  (map (fn [[rownum data flags]]
+         [rownum (normalize-data-object data) flags])
+       data))
+
 (defn process-fetch
   [uid args]
   (let [start-row (aget args "start-row")
@@ -111,7 +161,7 @@
                (send-process #js{:type "command"
                                  :uid uid
                                  :val (transit-write
-                                       (conj data cont-id))}))))))
+                                       (conj (normalize-data-bulk data) cont-id))}))))))
 
 (defn process-metadata
   [uid args]
@@ -123,14 +173,7 @@
                        :uid uid
                        :val (transit-write metadata)})))
 
-(defn normalize-column
-  [container-id column-name val]
-  ;;transorms maximo data to graphql data, right now only floats are affected
-  (let [numeric? (:numeric (c/get-column-metadata container-id column-name))
-        ]
-    
-    )
-  )
+
 
 (defn process-command
   [uid val]
