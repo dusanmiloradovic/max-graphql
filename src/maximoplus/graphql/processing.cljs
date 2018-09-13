@@ -119,5 +119,9 @@
 
 (defn get-metadata
   [container-id columns]
-  (map (fn [col] (get-column-metadata container-id col))
-       columns))
+  (let [cont (@registered-containers container-id)]
+    (.then
+     (b/register-columns cont columns nil nil)
+     (fn [_]
+       (map (fn [col] (get-column-metadata container-id col))
+            columns)))))

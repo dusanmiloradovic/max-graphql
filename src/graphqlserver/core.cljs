@@ -79,6 +79,15 @@
                ["_handle" component-id])))
       _res))))
 
+(defn process-metadata
+  [res]
+  (clj->js
+   (loop [mdt mdt rez {}]
+     (if (empty? mdt)
+       rez
+       (let [rr (first rez)]
+         (recur (rest mdt) (assoc rez (:attributeName rr) rr)))))))
+
 (defn test-po-resolver
   [obj args context info]
   (let [from-row (aget args "fromRow")
@@ -561,18 +570,28 @@
           _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
           command-object #js{:command "fetch"
                              :args #js{:relationship rel-name
-                                       :columns (get-maximo-scalar-fields (:rel-name test-names))
+                                       :columns (get-maximo-scalar-fields return-type)
                                        :parent-handle parent-handle 
                                        :parent-id (aget obj "id")
                                        :start-row from-row
                                        :num-rows num-rows
-                                       :parent-object (:object-name test-names)
+                                       :parent-object type
                                        :handle handle
                                        :qbe qbe
                                        }}
           res-p (send-graphql-command pid command-object) 
           ]
       (.then res-p process-fetch))))
+
+(defn get-metadata-resolver-function
+  [type field return-type]
+  (fn [obj args context info]
+    (let [handle (aget obj "_handle")
+          command-object #js{:command "metadata"
+                             :columns (get-maximo-scalar-fields return-type)
+                             :handle handle}
+          res-p (send-graphql-command pid command-object)]
+      (.then res-p process-metadata))))
 
 (defn get-resolver-function
   [type field return-type]

@@ -34,6 +34,26 @@ input POSTDQBE{
   status:String
 }
 
+type ColumnMetadata{
+  attributeName String
+  remarks:String
+  title String
+  persistent Boolean
+  isALNDomain Boolean
+  domainId String
+  hasLD Boolean
+  maxType String
+  length Int
+  scale Int
+}
+
+type POMetadata{
+  ponum:ColumnMetadata
+  description:ColumnMetadata
+  status:ColumnMetadata
+  orderDate:ColumnMetadata
+}
+
 type PO{
   id:ID
   ponum:String
@@ -43,6 +63,7 @@ type PO{
   poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]
   list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN] 
   _handle:String
+  _metadata:POMetadata
 }
 
 #For the qbe types all paramenters will be string except the id
@@ -65,6 +86,16 @@ type POLINE{
   linecost:Float
   _handle:String
   
+}
+
+type POLINEMetadata{
+  ponum:ColumnMetadata
+  description:ColumnMetadata
+  polinenum:ColumnMetadata
+  orderqty:ColumnMetadata
+  orderunit:ColumnMetadata
+  unitcost:ColumnMetadata
+  linecost:ColumnMetadata
 }
 
 type POLINESTD{

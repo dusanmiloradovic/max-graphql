@@ -170,9 +170,11 @@
   (let [handle (aget args "handle");;same as parent-handle for rel containers
         columns (aget args "columns")
         metadata (pr/get-metadata handle columns)]
-    (send-process #js {:type "command"
-                       :uid uid
-                       :val (transit-write metadata)})))
+    (.then metadata
+           (fn [_metadata]
+             (send-process #js {:type "command"
+                                :uid uid
+                                :val (transit-write _metadata)})))))
 
 
 
