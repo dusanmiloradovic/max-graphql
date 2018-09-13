@@ -5,6 +5,7 @@
             [maximoplus.net :as n]
             [maximoplus.utils :as u]
             [cljs.core.async :as a :refer [<!]]
+            [clojure.string :as s :refer [replace]]
             [maximoplus.net.node :refer [Node]]
             [maximoplus.graphql.processing :as pr]
             [cognitect.transit :as transit]
@@ -45,7 +46,7 @@
 
 (defn number-from-string
   [num]
-  (.replace num thousands-sep-regex ""))
+  (replace num thousands-sep-symbol ""))
 
 (defn send-process
   [message]
