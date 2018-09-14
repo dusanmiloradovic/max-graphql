@@ -115,7 +115,7 @@
   (let [cont (@registered-containers container-id)
         columns (js-keys data)]
     (b/register-columns cont columns nil nil)
-    (b/move-to-unique-id container)
+    (b/move-to-uniqueid cont uniqueid nil nil)
     (doseq [c columns] ;;TODO later make a function on the server side to accept this at once and improve the performance
       (b/set-value cont c (aget data c) nil nil))
     (b/fetch-data cont (b/get-currow cont) 1 nil nil)))
