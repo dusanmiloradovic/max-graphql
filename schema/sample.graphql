@@ -51,7 +51,7 @@ type POMetadata{
   ponum:ColumnMetadata
   description:ColumnMetadata
   status:ColumnMetadata
-  orderDate:ColumnMetadata
+  orderdate:ColumnMetadata
 }
 
 type PO{
