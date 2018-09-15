@@ -164,6 +164,56 @@
                                  :val (transit-write
                                        (conj (normalize-data-bulk cont-id data) cont-id))}))))))
 
+(defn get-container
+  [args]
+  (let [handle (aget args "handle")
+        data (aget args "data")
+        uniqueid (aget args "id")
+        ]
+    [(if (and handle (@pr/registered-containers handle)) handle
+         (pr/register-container args))
+     handle
+     uniqueid]))
+
+(defn process-add
+  [uid args]
+  (let [[cont-id handle uniqueid] (get-container args)]
+    (.then
+     (pr/add-data cont-id (aget args "data"))
+     (fn [data]
+       (println "add result " data)
+       (send-process #js{:type "command"
+                         :uid uid
+                         :val (transit-write (normalize-data-object cont-id (first data)))})))))
+
+
+(defn process-update
+  [uid args]
+  (let  [[cont-id handle uniqueid] (get-container args)]
+    (.then
+     (if handle
+       (pr/update-data-with-handle cont-id uniqueid (aget args "data"))
+       (pr/update-data-no-handle cont-id  (aget args "data")))
+     (fn [data]
+       (println "update result " data)
+       (send-process #js{:type "command"
+                         :uid uid
+                         :val (transit-write (normalize-data-object cont-id (first data)))
+                         })))))
+
+(defn process-delete
+  [uid args]
+  (let  [[cont-id handle uniqueid] (get-container args)]
+    (.then 
+     (if handle
+       (pr/delete-data-with-handle cont-id uniqueid)
+       (pr/delete-data-no-handle cont-id))
+     (fn [data]
+       (println "delete result " data)
+       (send-process #js{:type "command"
+                         :uid uid
+                         :val (transit-write true)})))))
+
 (defn process-metadata
   [uid args]
   ;;metadata will be the child field of the object, so the handle will always be defined becuase will

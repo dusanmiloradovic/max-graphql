@@ -75,6 +75,14 @@ input POQBE{
   status:String
 }
 
+input POInput{
+  ponum:String
+  description:String
+  status:String
+  orderdate:String #TODO this should be GraphQL date (external package)
+  _handle:String
+}
+
 type POLINE{
   id:ID
   ponum:String
@@ -85,7 +93,17 @@ type POLINE{
   unitcost:Float
   linecost:Float
   _handle:String
-  
+}
+
+input POLINEInput{
+  ponum:String
+  description:String
+  polinenum:Int
+  orderqty:Float
+  orderunit:String
+  unitcost:Float
+  linecost:Float
+  _handle:String
 }
 
 type POLINEMetadata{
@@ -145,4 +163,16 @@ input ALNDOMAINQBE{
   id:ID
   value:String
   description:String
+}
+
+
+type Mutation{
+  addPO(_handle:String,po:POInput):PO
+  updatePO(_handle:String,po:POInput):PO
+  deletePO(_handle:String,id;ID):Boolean
+  addPOLINE(_handle:String,poline:POLINEInput):POLINE
+  updatePOLINE(_handle:String,po:POLINEInput):POLINE
+  deletePOLINE(_handle:String,id;ID):Boolean
+  save():Boolean
+  rollback():Boolean
 }

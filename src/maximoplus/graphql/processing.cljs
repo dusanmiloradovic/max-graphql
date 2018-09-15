@@ -60,13 +60,17 @@
         object-name (aget args "object-name")
         app-name (aget args "app")
         qbe (aget args "qbe")
-        uniqueid (when qbe (aget qbe "id"))]
+        uniqueid (if qbe
+                   (aget qbe "id")
+                   (aget args "id"))]
     (let [cont
           (if list-column
             (register-list-container parent-id parent-object list-column)
             (if relationship (register-rel-container  parent-id parent-object relationship)
                 (if uniqueid
-                  (UniqueMboAppContainer. object-name app-name uniqueid)
+                  (if app-name
+                    (UniqueMboAppContainer. object-name app-name uniqueid)
+                    (UniqueMboContainer. object-name uniqueid))
                   (AppContainer. object-name app-name))))]
       (swap! registered-containers assoc (get-id cont) cont )
       (get-id cont))))
@@ -132,11 +136,15 @@
 
 (defn delete-data-with-handle
   [container-id uniqueid]
-  )
+  (let [cont (@registered-containers container-id)]
+    (b/move-to-uniqueid cont uniqueid nil nil)
+    (b/del-row cont nil nil)))
 
+;;if there is no handle that means that the container is unique
 (defn delete-data-no-handle
   [container-id]
-  )
+  (let [cont (@registered-containers container-id)]
+    (b/del-row cont nil nil)))
 
 (defn get-data
   [app-name
