@@ -162,7 +162,9 @@
                (send-process #js{:type "command"
                                  :uid uid
                                  :val (transit-write
-                                       (conj (normalize-data-bulk cont-id data) cont-id))}))))))
+                                       (conj
+                                        (normalize-data-bulk cont-id data)
+                                        cont-id))}))))))
 
 (defn get-container
   [args]
@@ -184,7 +186,14 @@
        (println "add result " data)
        (send-process #js{:type "command"
                          :uid uid
-                         :val (transit-write (normalize-data-object cont-id (first data)))})))))
+                         :val 
+                         (transit-write
+                          (conj
+                           (seq
+                            [(normalize-data-object cont-id (second data))
+                             (normalize-data-object cont-id (nth data 2))])
+                           cont-id
+                           ))})))))
 
 
 (defn process-update
@@ -198,8 +207,14 @@
        (println "update result " data)
        (send-process #js{:type "command"
                          :uid uid
-                         :val (transit-write (normalize-data-object cont-id (first data)))
-                         })))))
+                         :val
+                         (transit-write
+                          (conj
+                           (seq
+                            [(normalize-data-object cont-id (second data))
+                             (normalize-data-object cont-id (nth data 2))])
+                           cont-id
+                           ))})))))
 
 (defn process-delete
   [uid args]

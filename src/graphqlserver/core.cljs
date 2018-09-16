@@ -62,7 +62,7 @@
                  :object-name "PO"
                  :rel-name "POLINE"})
 
-(defn process-fetch
+(defn process-data-rows
   [res]
   (let [component-id (first res)
         _res (rest res)]
@@ -77,6 +77,13 @@
                     data)
                ["_handle" component-id])))
       _res))))
+
+(defn process-data-one-row
+  [res]
+  (let [component-id (first res)
+        _res (rest res)]
+    )
+  )
 
 (defn process-metadata
   [res]
@@ -105,7 +112,7 @@
                              :qbe qbe
                              }}
                )]
-    (.then res-p process-fetch)))
+    (.then res-p process-data-rows)))
 
 (def rel-temp-promises (atom {}))
 
@@ -163,7 +170,7 @@
     (.then res-p
            (fn [res]
              (println "got the response for the parent id " parent-id)
-             (process-fetch res)))))
+             (process-data-rows res)))))
 
 ;;here every line will have a different handle. Think about the save, how it should work (this will go to the relationship to the parent uniquembocontainer)
 (defn test-poline-resolver
@@ -194,7 +201,7 @@
                                      }}
         res-p (send-graphql-command pid command-object) 
         ]
-    (.then res-p process-fetch)))
+    (.then res-p process-data-rows)))
 
 (defn test-status-domain-resolver
   [obj args context info]
@@ -221,7 +228,7 @@
                                      }}
         res-p (send-graphql-command pid command-object) 
         ]
-    (.then res-p process-fetch))
+    (.then res-p process-data-rows))
   )
 
 (def resolvers-manual #js{
@@ -536,7 +543,7 @@
                               :qbe qbe
                               }}
                 )]
-     (.then res-p process-fetch))))
+     (.then res-p process-data-rows))))
 
 (defn get-list-domain-resolver-function
   [type field return-type]
@@ -564,7 +571,7 @@
                                        }}
           res-p (send-graphql-command pid command-object) 
           ]
-      (.then res-p process-fetch))))
+      (.then res-p process-data-rows))))
 
 (defn get-rel-resolver-function
   [type field return-type]
@@ -592,7 +599,7 @@
                                        }}
           res-p (send-graphql-command pid command-object) 
           ]
-      (.then res-p process-fetch))))
+      (.then res-p process-data-rows))))
 
 (defn get-metadata-resolver-function
   [type field return-type]

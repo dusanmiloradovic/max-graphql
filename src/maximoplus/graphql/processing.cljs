@@ -112,7 +112,10 @@
     (b/add-new-row cont nil nil)
     (doseq [c columns] ;;TODO later make a function on the server side to accept this at once and improve the performance
       (b/set-value cont c (aget data c) nil nil))
-    (b/fetch-current cont nil nil)))
+    (.then
+     (b/fetch-current cont nil nil)
+     (fn [data]
+       (get-fetched-row-data [0 (first data)])))))
 
 (defn update-data-with-handle
   [container-id uniqueid data]
@@ -122,7 +125,9 @@
     (b/move-to-uniqueid cont uniqueid nil nil)
     (doseq [c columns] ;;TODO later make a function on the server side to accept this at once and improve the performance
       (b/set-value cont c (aget data c) nil nil))
-    (b/fetch-current cont nil nil)))
+    (.then
+     (b/fetch-current cont nil nil)
+     (fn [data] (get-fetched-row-data [0 (first data)])))))
 
 ;;the difference is that if there is no handle we already get the unique container, we need just to update the data
 (defn update-data-no-handle
@@ -132,7 +137,9 @@
     (b/register-columns cont columns nil nil)
     (doseq [c columns] ;;TODO later make a function on the server side to accept this at once and improve the performance
       (b/set-value cont c (aget data c) nil nil))
-    (b/fetch-current cont nil nil)))
+    (.then
+     (b/fetch-current cont nil nil)
+     (fn [data] (get-fetched-row-data [0 (first data)])))))
 
 (defn delete-data-with-handle
   [container-id uniqueid]
