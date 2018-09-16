@@ -234,6 +234,9 @@
         args (aget val "args")]
     (condp = command
       "fetch" (process-fetch uid args)
+      "add" (process-add uid args)
+      "update" (process-update uid args)
+      "delete" (process-delete uid args)
       "metadata" (process-metadata uid args)
       :default)))
 

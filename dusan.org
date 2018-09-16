@@ -1,6 +1,9 @@
 * Tasks
 ** Maximo
-*** TODO Change web.xml in production to point to the sitegraphics folder
+*** DONE Change web.xml in production to point to the sitegraphics folder
+*** TODO Check the are all the images copied to the REP sitegraphics
+*** TODO Test the REP sitegraphics for all the hanbshan , habshan5 and all the areas
+*** TODO copy the images to the production
 ***
 ** Standalone Sitegraphics
 *** TODO Put Google Map from Anish for the Bab
