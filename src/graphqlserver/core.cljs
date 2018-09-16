@@ -79,11 +79,17 @@
       _res))))
 
 (defn process-data-one-row
-  [res]
+  [[component-id data flags]]
   (let [component-id (first res)
         _res (rest res)]
-    )
-  )
+    (clj->js
+     (into {}
+           (conj
+            (map (fn [[k v]]
+                   [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
+                   )
+                 data)
+            ["_handle" component-id])))))
 
 (defn process-metadata
   [res]
@@ -618,18 +624,30 @@
   (fn [obj args context info]
     (aget obj field)))
 
+(defn get-mutation-resolver
+  [type field return-type]
+  (case
+      (.startsWith field "add") (get-add-mutation-resolver field return-type)
+      (.startsWith field "delete") (get-delete-mutation-resolver field return-type)
+      (.startsWith field "update") (get-uodate-mutation-resolver field return-type)
+      (= field "save" (get-save-mutation-resolver))
+      (= field "rollback" (get-rollback-mutatation-resolver))
+      :else (fn [x] x)))
+
+(defn get-query-resolver
+  [type field return-type]
+  (cond
+    (= type "Query") (get-app-resolver-function type field return-type)
+    (.startsWith field "list_") (get-list-domain-resolver-function type field return-type)
+    (= "_metadata" field) (get-metadata-resolver-function type field return-type)
+    :else (get-rel-resolver-function type field return-type)))
+
 (defn get-resolver-function
   [type field return-type]
-  ;;For queries, we return appcontainer(if it is below Query type, or relationships and lists below
-  (if (= "ColumnMetadata" return-type)
-      (get-column-meta-resolver-function field)
-      (if (= type "Query");;top level, always app container
-        (get-app-resolver-function type field return-type)
-        (if (.startsWith field "list_")
-          (get-list-domain-resolver-function type field return-type)
-          (if (= "_metadata" field)
-            (get-metadata-resolver-function type field return-type)
-            (get-rel-resolver-function type field return-type))))))
+  (cond
+    (= "ColumnMetadata" return-type) (get-column-meta-resolver-function field)
+    (= type "Mutations") (get-mutation-resolver type field return-type)
+    :else (get-query-resolver type field return-type)))
 
 (defn get-auto-resolvers
   ;;for the time being, just for the queries
