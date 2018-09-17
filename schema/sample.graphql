@@ -188,16 +188,16 @@ input ALNDOMAINQBE{
 type Mutation{
 #  addPO(_handle:String,data:POInput):PO
 #  updatePO(_handle:String,id:ID,data:POInput):PO
-#  deletePO(_handle:String,id;ID):Boolean
+#  deletePO(_handle:String,id:ID):Boolean
 #  addPOLINE(_handle:String,data:POLINEInput):POLINE
 #  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
-#  deletePOLINE(_handle:String,id;ID):Boolean
+#  deletePOLINE(_handle:String,id:ID):Boolean
   addPO(_handle:String,data:POSTDInput):POSTD
   updatePO(_handle:String,id:ID,data:POSTDInput):POSTD
-  deletePO(_handle:String,id;ID):Boolean
+  deletePO(_handle:String,id:ID):Boolean
   addPOLINE(_handle:String,data:POLINESTDInput):POLINESTD
   updatePOLINE(_handle:String,id:ID,data:POLINESTDInput):POLINESTD
-  deletePOLINE(_handle:String,id;ID):Boolean
-  save():Boolean
-  rollback():Boolean
+  deletePOLINE(_handle:String,id:ID):Boolean
+  save:Boolean
+  rollback:Boolean
 }
