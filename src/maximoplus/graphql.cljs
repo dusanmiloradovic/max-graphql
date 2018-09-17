@@ -174,14 +174,14 @@
         ]
     [(if (and handle (@pr/registered-containers handle)) handle
          (pr/register-container args))
-     handle
+     data
      uniqueid]))
 
 (defn process-add
   [uid args]
-  (let [[cont-id handle uniqueid] (get-container args)]
+  (let [[cont-id data uniqueid] (get-container args)]
     (.then
-     (pr/add-data cont-id (aget args "data"))
+     (pr/add-data cont-id data)
      (fn [data]
        (println "add result " data)
        (send-process #js{:type "command"
@@ -198,11 +198,11 @@
 
 (defn process-update
   [uid args]
-  (let  [[cont-id handle uniqueid] (get-container args)]
+  (let  [[cont-id data uniqueid] (get-container args)]
     (.then
      (if handle
-       (pr/update-data-with-handle cont-id uniqueid (aget args "data"))
-       (pr/update-data-no-handle cont-id  (aget args "data")))
+       (pr/update-data-with-handle cont-id uniqueid data)
+       (pr/update-data-no-handle cont-id data))
      (fn [data]
        (println "update result " data)
        (send-process #js{:type "command"

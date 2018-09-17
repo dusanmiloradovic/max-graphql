@@ -624,6 +624,44 @@
   (fn [obj args context info]
     (aget obj field)))
 
+(defn get-add-mutation-resolver
+  [field return-type]
+  (fn [obj args context info]
+    (let [handle (aget args "_handle")
+          pid (aget context "pid")
+          data (aget args "data")
+          command-object #js{:command "add"
+                             :args #js{:handle handle
+                                       :data data}}
+          res-p (send-graphql-command pid command-object)]
+      (.then res-p process-data-one-row))))
+
+(defn get-update-mutation-resolver
+  [field return-type]
+  (fn [obj args context info]
+    (let [handle (aget args "_handle")
+          pid (aget context "pid")
+          id (aget args "id")
+          data (aget args "data")
+          command-object #js{:command "update"
+                             :args #js{:handle handle
+                                       :id id
+                                       :data data}}
+          res-p (send-graphql-command pid command-object)]
+      (.then res-p process-data-one-row))))
+
+(defn get-delete-mutation-resolver
+  [field return-type]
+  (fn [obj args context info]
+    (let [handle (aget args "_handle")
+          pid (aget context "pid")
+          id (aget args "id")
+          command-object #js{:command "delete"
+                             :args #js{:handle handle
+                                       :id}}
+          res-p (send-graphql-command pid command-object)]
+      (.then res-p #(true)))))
+
 (defn get-mutation-resolver
   [type field return-type]
   (case
