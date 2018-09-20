@@ -11,8 +11,8 @@
 type Query {
   #  books: [Book]
   # book(author:String): Book
-  po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
-  #po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
+#   po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
 }
 
 #obrisi ovo kada ide u prod, iz gaska
@@ -32,6 +32,14 @@ input POSTDQBE{
   ponum:String
   description:String
   status:String
+}
+
+input POSTDInput{
+  ponum:String
+  description:String
+  status:String
+  orderdate:String #TODO this should be GraphQL date (external package)
+  _handle:String
 }
 
 type ColumnMetadata{
@@ -153,6 +161,17 @@ input POLINESTDQBE{
   
 }
 
+input POLINESTDInput{
+  ponum:String
+  description:String
+  polinenum:Int
+  orderqty:Float
+  orderunit:String
+  unitcost:Float
+  linecost:Float
+  _handle:String
+}
+
 type ALNDOMAIN{
   id:ID
   value:String
@@ -167,12 +186,18 @@ input ALNDOMAINQBE{
 
 
 type Mutation{
-  addPO(_handle:String,po:POInput):PO
-  updatePO(_handle:String,po:POInput):PO
-  deletePO(_handle:String,id;ID):Boolean
-  addPOLINE(_handle:String,poline:POLINEInput):POLINE
-  updatePOLINE(_handle:String,po:POLINEInput):POLINE
-  deletePOLINE(_handle:String,id;ID):Boolean
-  save():Boolean
-  rollback():Boolean
+#  addPO(_handle:String,data:POInput):PO
+#  updatePO(_handle:String,id:ID,data:POInput):PO
+#  deletePO(_handle:String,id:ID):Boolean
+#  addPOLINE(_handle:String,data:POLINEInput):POLINE
+#  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
+#  deletePOLINE(_handle:String,id:ID):Boolean
+  addPO(_handle:String,data:POSTDInput):POSTD
+  updatePO(_handle:String,id:ID,data:POSTDInput):POSTD
+  deletePO(_handle:String,id:ID):Boolean
+  addPOLINE(_handle:String,data:POLINESTDInput):POLINESTD
+  updatePOLINE(_handle:String,id:ID,data:POLINESTDInput):POLINESTD
+  deletePOLINE(_handle:String,id:ID):Boolean
+  save:Boolean
+  rollback:Boolean
 }

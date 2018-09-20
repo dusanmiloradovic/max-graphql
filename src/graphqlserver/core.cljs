@@ -80,16 +80,14 @@
 
 (defn process-data-one-row
   [[component-id data flags]]
-  (let [component-id (first res)
-        _res (rest res)]
-    (clj->js
-     (into {}
-           (conj
-            (map (fn [[k v]]
-                   [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
-                   )
-                 data)
-            ["_handle" component-id])))))
+  (clj->js
+   (into {}
+         (conj
+          (map (fn [[k v]]
+                 [(if (= k "_uniqueid") "id" (.toLowerCase k)) v]
+                 )
+               data)
+          ["_handle" component-id]))))
 
 (defn process-metadata
   [res]
@@ -624,14 +622,70 @@
   (fn [obj args context info]
     (aget obj field)))
 
+(defn get-add-mutation-resolver
+  [field return-type]
+  (fn [obj args context info]
+    (let [handle (aget args "_handle")
+          pid (aget context "pid")
+          data (aget args "data")
+          command-object #js{:command "add"
+                             :args #js{:handle handle
+                                       :data data}}
+          res-p (send-graphql-command pid command-object)]
+      (.then res-p process-data-one-row))))
+
+(defn get-update-mutation-resolver
+  [field return-type]
+  (fn [obj args context info]
+    (let [handle (aget args "_handle")
+          pid (aget context "pid")
+          id (aget args "id")
+          data (aget args "data")
+          command-object #js{:command "update"
+                             :args #js{:handle handle
+                                       :id id
+                                       :data data}}
+          res-p (send-graphql-command pid command-object)]
+      (.then res-p process-data-one-row))))
+
+(defn get-delete-mutation-resolver
+  [field return-type]
+  (fn [obj args context info]
+    (let [handle (aget args "_handle")
+          pid (aget context "pid")
+          id (aget args "id")
+          command-object #js{:command "delete"
+                             :args #js{:handle handle
+                                       :id id}}
+          res-p (send-graphql-command pid command-object)]
+      (.then res-p (fn [_] true)))))
+
+(defn get-save-mutation-resolver
+  ;;saves all the changes for the user
+  []
+  (fn [obj args context info]
+    (let [pid (aget context "pid")]
+      (.then
+       (send-graphql-command pid #js{:command "save"})
+       (fn [_] true)))))
+
+(defn get-rollback-mutation-resolver
+  ;;saves all the changes for the user
+  []
+  (fn [obj args context info]
+    (let [pid (aget context "pid")]
+      (.then
+       (send-graphql-command pid #js{:command "rollback"})
+       (fn [_] true)))))
+
 (defn get-mutation-resolver
   [type field return-type]
-  (case
+  (cond
       (.startsWith field "add") (get-add-mutation-resolver field return-type)
       (.startsWith field "delete") (get-delete-mutation-resolver field return-type)
-      (.startsWith field "update") (get-uodate-mutation-resolver field return-type)
+      (.startsWith field "update") (get-update-mutation-resolver field return-type)
       (= field "save" (get-save-mutation-resolver))
-      (= field "rollback" (get-rollback-mutatation-resolver))
+      (= field "rollback" (get-rollback-mutation-resolver))
       :else (fn [x] x)))
 
 (defn get-query-resolver
