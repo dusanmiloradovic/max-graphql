@@ -700,7 +700,7 @@
   [type field return-type]
   (cond
     (= "ColumnMetadata" return-type) (get-column-meta-resolver-function field)
-    (= type "Mutations") (get-mutation-resolver type field return-type)
+    (= type "Mutation") (get-mutation-resolver type field return-type)
     :else (get-query-resolver type field return-type)))
 
 (defn get-auto-resolvers
