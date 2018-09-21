@@ -80,8 +80,8 @@
 (defn set-qbe
   [cont qbe]
   (swap! registered-qbe assoc (c/get-id cont) qbe)
-  (if-let [uniqueid (aget qbe "id")]
-    (b/move-to-uniqueid cont uniqueid nil nil)
+  (if-let [uniqueid  (aget qbe "id")]
+    (b/move-to-uniqueid cont (js/parseInt uniqueid) nil nil)
     (do
       (doseq [[k v] qbe]
         (b/set-qbe cont k v nil nil))
@@ -120,31 +120,40 @@
 (defn update-data-with-handle
   [container-id uniqueid data]
   (let [cont (@registered-containers container-id)
-        columns (js-keys data)]
-    (b/register-columns cont columns nil nil)
-    (b/move-to-uniqueid cont uniqueid nil nil)
-    (doseq [c columns] ;;TODO later make a function on the server side to accept this at once and improve the performance
-      (b/set-value cont c (aget data c) nil nil))
-    (.then
-     (b/fetch-current cont nil nil)
-     (fn [data] (get-fetched-row-data [0 (first data)])))))
+        columns (js-keys data)
+        _uniqueid (js/parseInt uniqueid)]
+
+    (prom-then->
+     (b/register-columns cont columns nil nil)
+     (b/move-to-uniqueid cont _uniqueid nil nil)
+     (.all js/Promise
+           (clj->js
+            (map
+             (fn [c](b/set-value cont c (aget data c) nil nil))
+             columns))))
+    (b/fetch-current cont nil nil)
+    (fn [data] (get-fetched-row-data [0 (first data)]))))
 
 ;;the difference is that if there is no handle we already get the unique container, we need just to update the data
 (defn update-data-no-handle
   [container-id  data]
   (let [cont (@registered-containers container-id)
         columns (js-keys data)]
-    (b/register-columns cont columns nil nil)
-    (doseq [c columns] ;;TODO later make a function on the server side to accept this at once and improve the performance
-      (b/set-value cont c (aget data c) nil nil))
-    (.then
+    (prom-then->
+     (b/register-columns cont columns nil nil)
+     (.all js/Promise
+           (clj->js
+            (map
+             (fn [c](b/set-value cont c (aget data c) nil nil))
+             columns)))
      (b/fetch-current cont nil nil)
      (fn [data] (get-fetched-row-data [0 (first data)])))))
 
 (defn delete-data-with-handle
   [container-id uniqueid]
-  (let [cont (@registered-containers container-id)]
-    (b/move-to-uniqueid cont uniqueid nil nil)
+  (let [cont (@registered-containers container-id)
+        _uniqueid (js/parseInt uniqueid)]
+    (b/move-to-uniqueid cont _uniqueid nil nil)
     (b/del-row cont nil nil)))
 
 ;;if there is no handle that means that the container is unique
