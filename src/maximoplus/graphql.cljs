@@ -159,18 +159,18 @@
      uniqueid]))
 
 (defn process-command-error
-  [uid error-type error mx-error-group mx-error-code]
+  [uid [[error-type error-text mx-error-group mx-error-code] _ _]]
   (let [error-text (if (or (= :js error-type)
                            (= :net error-type))
-                     (.toString error)
-                     error
+                     (.toString error-text)
+                     error-text
                      )
         error-code (if (= :mx error-type)
                      (str mx-error-group " " mx-error-code)
                      (name error-type))]
     (send-process #js {:type "command"
                        :uid uid
-                       :value (transit-write
+                       :val (transit-write
                                {:error-code error-code
                                 :error-text error-text})})))
 
@@ -196,8 +196,8 @@
                                         (normalize-data-bulk cont-id data)
                                         cont-id))})))
        (catch
-           (fn [[err-type error mx-error-group mx-error-code] _ _]
-             (process-command-error uid err-type error mx-error-group mx-error-code)))))))
+           (fn [err]
+             (process-command-error uid err)))))))
 
 (defn process-add
   [uid args]
@@ -217,8 +217,8 @@
                             cont-id
                             ))})))
      (catch
-         (fn [[err-type error mx-error-group mx-error-code] _ _]
-           (process-command-error uid err-type error mx-error-group mx-error-code))))))
+         (fn [err]
+           (process-command-error uid err))))))
 
 (defn process-update
   [uid args]
@@ -229,7 +229,6 @@
        (pr/update-data-no-handle cont-id data))
      (then
       (fn [data]
-        (println "update result " data)
         (send-process #js{:type "command"
                           :uid uid
                           :val
@@ -241,8 +240,8 @@
                             cont-id
                             ))})))
      (catch
-         (fn [[err-type error mx-error-group mx-error-code] _ _]
-           (process-command-error uid err-type error mx-error-group mx-error-code))))))
+         (fn [err]
+           (process-command-error uid err))))))
 
 (defn process-delete
   [uid args]
@@ -253,13 +252,12 @@
        (pr/delete-data-no-handle cont-id))
      (then
       (fn [data]
-        (println "delete result " data)
         (send-process #js{:type "command"
                           :uid uid
                           :val (transit-write true)})))
      (catch
-         (fn [[err-type error mx-error-group mx-error-code] _ _]
-           (process-command-error uid err-type error mx-error-group mx-error-code))))))
+         (fn [err]
+           (process-command-error uid err))))))
 
 (defn process-metadata
   [uid args]
@@ -275,8 +273,8 @@
                            :uid uid
                            :val (transit-write _metadata)})))
      (catch
-         (fn [[err-type error mx-error-group mx-error-code] _ _]
-           (process-command-error uid err-type error mx-error-group mx-error-code))))))
+         (fn [err]
+           (process-command-error uid err))))))
 
 
 
