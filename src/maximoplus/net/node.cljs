@@ -31,7 +31,7 @@
            (fn [err resp body]
              (reset! session-cookie (.getCookieString cookie-jar (aget option "url")))
              (if err
-               (error-callback [err 6 (.-statusCode resp)]) ;;For the compatibility reasons with browser, I will use just 6 (error) and 0 no error
+               (error-callback [[:net err] 6 (when resp (.-statusCode resp))]) ;;For the compatibility reasons with browser, I will use just 6 (error) and 0 no error
                (if (is-error? resp)
                  (do
                    (.log js/console "there has been an error")

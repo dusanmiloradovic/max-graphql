@@ -1,7 +1,8 @@
 (ns maximoplus.graphql.processing
   (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer UniqueMboContainer]]
             [maximoplus.core :as c :refer [get-id get-fetched-row-data get-column-metadata]]
-            [maximoplus.promises :as p]))
+            [maximoplus.promises :as p])
+  (:require-macros [maximoplus.graphql.processing :refer [prom-> prom-then->]]))
 
 (def registered-containers
   (atom {}))
@@ -130,9 +131,9 @@
            (clj->js
             (map
              (fn [c](b/set-value cont c (aget data c) nil nil))
-             columns))))
-    (b/fetch-current cont nil nil)
-    (fn [data] (get-fetched-row-data [0 (first data)]))))
+             columns)))
+     (b/fetch-current cont nil nil)
+     (fn [data] (get-fetched-row-data [0 (first data)])))))
 
 ;;the difference is that if there is no handle we already get the unique container, we need just to update the data
 (defn update-data-no-handle
