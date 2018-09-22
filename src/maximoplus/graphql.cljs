@@ -170,7 +170,7 @@
                      (name error-type))]
     (send-process #js {:type "command"
                        :uid uid
-                       :error (transit-write
+                       :value (transit-write
                                {:error-code error-code
                                 :error-text error-text})})))
 

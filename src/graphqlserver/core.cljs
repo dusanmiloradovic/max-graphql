@@ -1,6 +1,6 @@
 (ns graphqlserver.core
   (:require
-   ["apollo-server-express" :refer (ApolloServer gql AuthenticationError)]
+   ["apollo-server-express" :refer (ApolloServer gql AuthenticationError ApolloError)]
    ["express" :as express]
    ["child_process" :refer [fork]]
    ["express-session" :as session]
@@ -98,25 +98,6 @@
        (let [rr (first mdt)]
          (recur (rest mdt) (assoc rez (.toLowerCase (:attributeName rr)) rr)))))))
 
-(defn test-po-resolver
-  [obj args context info]
-  (let [from-row (aget args "fromRow")
-        num-rows (aget args "numRows")
-        handle (aget args "_handle")
-        qbe (aget args "qbe")
-        res-p (send-graphql-command 
-               (aget context "pid")
-               #js{:command "fetch"
-                   :args #js{:app (:app test-names)
-                             :object-name (:object-name test-names)
-                             :columns (get-maximo-scalar-fields (:object-name test-names))
-                             :start-row from-row
-                             :num-rows num-rows
-                             :handle handle
-                             :qbe qbe
-                             }}
-               )]
-    (.then res-p process-data-rows)))
 
 (def rel-temp-promises (atom {}))
 
@@ -177,84 +158,6 @@
              (process-data-rows res)))))
 
 ;;here every line will have a different handle. Think about the save, how it should work (this will go to the relationship to the parent uniquembocontainer)
-(defn test-poline-resolver
-  [obj args context info]
-  (.log js/console obj)
-  (.log js/console args)
-  (.log js/console "*****************************")
-  (let [from-row (aget args "fromRow")
-        num-rows (aget args "numRows")
-        handle (aget args "_handle")
-        parent-handle (aget obj "_handle")
-        parent-id (aget obj "id")
-        rel-name (:rel-name test-names)
-;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
-        pid (aget context "pid")
-        qbe (aget args "qbe")
-        _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
-        command-object #js{:command "fetch"
-                           :args #js{:relationship rel-name
-                                     :columns (get-maximo-scalar-fields (:rel-name test-names))
-                                     :parent-handle parent-handle 
-                                     :parent-id (aget obj "id")
-                                     :start-row from-row
-                                     :num-rows num-rows
-                                     :parent-object (:object-name test-names)
-                                     :handle handle
-                                     :qbe qbe
-                                     }}
-        res-p (send-graphql-command pid command-object) 
-        ]
-    (.then res-p process-data-rows)))
-
-(defn test-status-domain-resolver
-  [obj args context info]
-  (let [from-row (aget args "fromRow")
-        num-rows (aget args "numRows")
-        handle (aget args "_handle")
-        parent-handle (aget obj "_handle")
-        parent-id (aget obj "id")
-        rel-name (:rel-name test-names)
-;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
-        pid (aget context "pid")
-        qbe (aget args "qbe")
-        _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
-        command-object #js{:command "fetch"
-                           :args #js{:list-column "status"
-                                     :columns (get-maximo-scalar-fields "ALNDOMAIN")
-                                     :parent-handle parent-handle 
-                                     :parent-id (aget obj "id")
-                                     :start-row from-row
-                                     :num-rows num-rows
-                                     :parent-object (:object-name test-names)
-                                     :handle handle
-                                     :qbe qbe
-                                     }}
-        res-p (send-graphql-command pid command-object) 
-        ]
-    (.then res-p process-data-rows))
-  )
-
-(def resolvers-manual #js{
-                   :Query #js{
-;;                              :books
-;;                              ;;(fn [] (throw (AuthenticationError.)))
-;;                              (fn [obj args context info]
-;;                                books)
-;;                              :book
-;;                              (fn[obj args context info]
-;;                                (aget books 0))
-                              :po test-po-resolver
-                              }
-                   :POSTD #js{
-                              :polinestd test-poline-resolver
-                              :list_status test-status-domain-resolver
-                              }
-                   :PO #js{
-                           :poline test-poline-resolver
-                           :list_status test-status-domain-resolver
-                           }
-                   })
 
 (defn max-session-check-middleware
   [req res next]
@@ -442,8 +345,11 @@
      (fn [resolve reject]
        (go
          (let [command-return-val (<! ch)]
-           (resolve
-            (get-graphql-value command-return-val))))))))
+           (if-let [error-text (and (map? command-return-val)
+                                    (:error-text command-return-val))]
+             (reject (ApolloError. error-text (:error-code command-return-val)))
+             (resolve
+              (get-graphql-value command-return-val)))))))))
 
 
 ;;the major idea is to automatically create the graphql resolver function based on schema
