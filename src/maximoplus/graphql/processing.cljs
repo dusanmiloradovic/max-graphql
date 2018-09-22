@@ -15,9 +15,25 @@
 (def registered-qbe
   (atom {}))
 
+(def data-changed-containers (atom []))
+;;only the top level containers, where the saving should be done
+
+(defn add-to-data-change
+  [container]
+  (let [main-cont
+        (loop [cnt container]
+          (let [prt (b/get-parent container)]
+            (if-not prt
+              cnt
+              (recur prt))))
+        cont-id (c/get-id main-cont)]
+    (when-not
+        (contains? @data-changed-containers cont-id)
+      (swap! data-changed-containers conj cont-id))))
+
 (defn data-changed?
   [container-id]
-  false)
+  (contains? @data-changed-containers container-id))
 ;;this will be implemented later with mutations
 ;;if the qbe has changed, and the data was changed, throw an error
 
@@ -128,6 +144,7 @@
              columns)))
      (b/fetch-current cont nil nil)
      (fn [data]
+       (add-to-data-change cont)
        (get-fetched-row-data [0 (first data)]))))) 
 
 (defn update-data-with-handle
@@ -145,7 +162,9 @@
              (fn [c](b/set-value cont c (aget data c) nil nil))
              columns)))
      (b/fetch-current cont nil nil)
-     (fn [data] (get-fetched-row-data [0 (first data)])))))
+     (fn [data]
+       (add-to-data-change cont)
+       (get-fetched-row-data [0 (first data)])))))
 
 ;;the difference is that if there is no handle we already get the unique container, we need just to update the data
 (defn update-data-no-handle
@@ -160,21 +179,52 @@
              (fn [c](b/set-value cont c (aget data c) nil nil))
              columns)))
      (b/fetch-current cont nil nil)
-     (fn [data] (get-fetched-row-data [0 (first data)])))))
+     (fn [data]
+       (add-to-data-change cont)
+       (get-fetched-row-data [0 (first data)])))))
 
 (defn delete-data-with-handle
   [container-id uniqueid]
   (let [cont (@registered-containers container-id)
         _uniqueid (js/parseInt uniqueid)]
-    (prom->
+    (prom-then->
      (b/move-to-uniqueid cont _uniqueid nil nil)
-     (b/del-row cont nil nil))))
+     (b/del-row cont nil nil)
+     (fn [_]
+       (add-to-data-change cont)))))
 
 ;;if there is no handle that means that the container is unique
 (defn delete-data-no-handle
   [container-id]
   (let [cont (@registered-containers container-id)]
-    (b/del-row cont nil nil)))
+    (prom-then->
+     (b/del-row cont nil nil)
+     (fn [_]
+       (add-to-data-change cont)))))
+
+(defn save-changed
+  []
+  (when-not (empty? @data-changed-containers)
+    (let [cnt-id (first @data-changed-containers)
+          cont (@registered-containers cnt-id)]
+      (..
+       (b/save cont nil nil)
+       (then
+        (fn [_]
+          (reset! data-changed-containers (vec (rest @data-changed-containers)))
+          (save-changed)))))))
+
+(defn rollback-changed
+  []
+  (when-not (empty? @data-changed-containers)
+    (let [cnt-id (first @data-changed-containers)
+          cont (@registered-containers cnt-id)]
+      (..
+       (b/reset cont nil nil)
+       (then
+        (fn [_]
+          (reset! data-changed-containers (vec (rest @data-changed-containers)))
+          (rollback-changed)))))))
 
 (defn get-data
   [app-name

@@ -276,6 +276,31 @@
          (fn [err]
            (process-command-error uid err))))))
 
+(defn process-save
+  [uid]
+  (..
+   (pr/save-changed)
+   (then
+    (fn [_]
+      (send-process #js{:type "command"
+                        :uid uid
+                        :val (transit-write true)})))
+   (catch
+       (fn [err]
+         (process-command-error uid err)))))
+
+(defn process-rollback
+  [uid]
+  (..
+   (pr/rollback-changed)
+   (then
+    (fn [_]
+      (send-process #js{:type "command"
+                        :uid uid
+                        :val (transit-write true)})))
+   (catch
+       (fn [err]
+         (process-command-error uid err)))))
 
 
 (defn process-command
@@ -288,6 +313,8 @@
       "update" (process-update uid args)
       "delete" (process-delete uid args)
       "metadata" (process-metadata uid args)
+      "save" (process-save uid)
+      "rollback" (process-rollback uid)
       :default)))
 
 (.on js/process "message"
