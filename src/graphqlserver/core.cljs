@@ -451,7 +451,7 @@
 
 ;; the resolver function will returnm the data object from mp client script
 
-(defn   get-field-data
+(defn get-field-data
   [t]
   {:name (aget t "name")
    :type (let [tp (-> t (aget "type") (aget "kind"))]

@@ -83,40 +83,52 @@
   (swap! registered-qbe assoc (c/get-id cont) qbe)
   (if-let [uniqueid  (aget qbe "id")]
     (b/move-to-uniqueid cont (js/parseInt uniqueid) nil nil)
-    (do
-      (doseq [[k v] qbe]
-        (b/set-qbe cont k v nil nil))
-      (b/reset cont nil nil))))
+    (prom->
+     (.all js/Promise
+           (clj->js
+            (map (fn [[k v]]
+                   (b/set-qbe cont k v nil nil))
+                 qbe)))
+     (b/reset cont nil nil))))
 
 (defn fetch-data
   [container-id columns start-row num-rows qbe]
   ;; all the graphql error handling needs to be done inline here, so I need promise, but i think capturing will be done in the outermost loop
   (let [cont (@registered-containers container-id)]
-    (b/register-columns cont columns nil nil)
-    (if (and qbe (not= qbe (@registered-qbe container-id)))
-      (if (data-changed? container-id)
-        (throw (js/Error. "Data changed, first rollback or save the data"))
-        (set-qbe cont qbe)))
-    (.then
-     (let [has-uniqueid? (when qbe (aget qbe "uniqueid"))
-           _start-row (if has-uniqueid? 0 start-row)
-           _num-rows (if has-uniqueid? 1 num-rows)]
-       (b/fetch-data cont _start-row _num-rows nil nil))
-     (fn [[data _ _]]
-       (filter some? (map get-fetched-row-data data))))))
+    (..
+     (b/register-columns cont columns nil nil)
+     (then
+      (fn [_]
+        (if (and qbe (not= qbe (@registered-qbe container-id)))
+          (if (data-changed? container-id)
+            ;;            (throw (js/Error. "Data changed, first rollback or save the data"))
+            (.reject js/Promise [[:js (js/Error. "Data changed, first rollback or save the data")] 6 nil])
+            (set-qbe cont qbe)))))
+     (then
+      (fn [_]
+        (let [has-uniqueid? (when qbe (aget qbe "uniqueid"))
+              _start-row (if has-uniqueid? 0 start-row)
+              _num-rows (if has-uniqueid? 1 num-rows)]
+          (b/fetch-data cont _start-row _num-rows nil nil))))
+     (then
+      (fn [[data _ _]]
+        (filter some? (map get-fetched-row-data data)))))))
 
 (defn add-data
   [container-id data]
   (let [cont (@registered-containers container-id)
         columns (js-keys data)]
-    (b/register-columns cont columns nil nil)
-    (b/add-new-row cont nil nil)
-    (doseq [c columns] ;;TODO later make a function on the server side to accept this at once and improve the performance
-      (b/set-value cont c (aget data c) nil nil))
-    (.then
+    (prom-then->
+     (b/register-columns cont columns nil nil)
+     (b/add-new-row cont nil nil)
+     (.all js/Promise
+           (clj->js
+            (map
+             (fn [c](b/set-value cont c (aget data c) nil nil))
+             columns)))
      (b/fetch-current cont nil nil)
      (fn [data]
-       (get-fetched-row-data [0 (first data)])))))
+       (get-fetched-row-data [0 (first data)]))))) 
 
 (defn update-data-with-handle
   [container-id uniqueid data]
@@ -154,8 +166,9 @@
   [container-id uniqueid]
   (let [cont (@registered-containers container-id)
         _uniqueid (js/parseInt uniqueid)]
-    (b/move-to-uniqueid cont _uniqueid nil nil)
-    (b/del-row cont nil nil)))
+    (prom->
+     (b/move-to-uniqueid cont _uniqueid nil nil)
+     (b/del-row cont nil nil))))
 
 ;;if there is no handle that means that the container is unique
 (defn delete-data-no-handle

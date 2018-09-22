@@ -146,26 +146,6 @@
          [rownum (normalize-data-object container-id data) flags])
        data))
 
-(defn process-fetch
-  [uid args]
-  (let [start-row (aget args "start-row")
-        num-rows (aget args "num-rows")
-        handle (aget args "handle") ;;handle is container id, useful for the paging
-        columns (aget args "columns")
-        qbe (aget args "qbe")
-        ]
-    (let [cont-id (if (and handle (@pr/registered-containers handle)) handle
-                      (pr/register-container args))
-          fetch-prom (pr/fetch-data cont-id columns start-row num-rows (js->clj qbe))]
-      (.then fetch-prom
-             (fn [data]
-               (send-process #js{:type "command"
-                                 :uid uid
-                                 :val (transit-write
-                                       (conj
-                                        (normalize-data-bulk cont-id data)
-                                        cont-id))}))))))
-
 (defn get-container
   [args]
   (let [handle (aget args "handle")
@@ -178,57 +158,108 @@
      data
      uniqueid]))
 
+(defn process-command-error
+  [uid error-type error mx-error-group mx-error-code]
+  (let [error-text (if (or (= :js error-type)
+                           (= :net error-type))
+                     (.toString error)
+                     error
+                     )
+        error-code (if (= :mx error-type)
+                     (str mx-error-group " " mx-error-code)
+                     (name error-type))]
+    (send-process #js {:type "command"
+                       :uid uid
+                       :error (transit-write
+                               {:error-code error-code
+                                :error-text error-text})})))
+
+(defn process-fetch
+  [uid args]
+  (let [start-row (aget args "start-row")
+        num-rows (aget args "num-rows")
+        handle (aget args "handle") ;;handle is container id, useful for the paging
+        columns (aget args "columns")
+        qbe (aget args "qbe")
+        ]
+    (let [cont-id (if (and handle (@pr/registered-containers handle)) handle
+                      (pr/register-container args))
+          fetch-prom (pr/fetch-data cont-id columns start-row num-rows (js->clj qbe))]
+      (..
+       fetch-prom
+       (then
+         (fn [data]
+               (send-process #js{:type "command"
+                                 :uid uid
+                                 :val (transit-write
+                                       (conj
+                                        (normalize-data-bulk cont-id data)
+                                        cont-id))})))
+       (catch
+           (fn [[err-type error mx-error-group mx-error-code] _ _]
+             (process-command-error uid err-type error mx-error-group mx-error-code)))))))
+
 (defn process-add
   [uid args]
   (let [[cont-id handle data uniqueid] (get-container args)]
-    (.then
+    (..
      (pr/add-data cont-id data)
-     (fn [data]
-       (println "add result " data)
-       (send-process #js{:type "command"
-                         :uid uid
-                         :val 
-                         (transit-write
-                          (conj
-                           (seq
-                            [(normalize-data-object cont-id (second data))
-                             (normalize-data-object cont-id (nth data 2))])
-                           cont-id
-                           ))})))))
-
+     (then
+      (fn [data]
+        (send-process #js{:type "command"
+                          :uid uid
+                          :val 
+                          (transit-write
+                           (conj
+                            (seq
+                             [(normalize-data-object cont-id (second data))
+                              (normalize-data-object cont-id (nth data 2))])
+                            cont-id
+                            ))})))
+     (catch
+         (fn [[err-type error mx-error-group mx-error-code] _ _]
+           (process-command-error uid err-type error mx-error-group mx-error-code))))))
 
 (defn process-update
   [uid args]
   (let  [[cont-id handle data uniqueid] (get-container args)]
-    (.then
+    (..
      (if handle
        (pr/update-data-with-handle cont-id uniqueid data)
        (pr/update-data-no-handle cont-id data))
-     (fn [data]
-       (println "update result " data)
-       (send-process #js{:type "command"
-                         :uid uid
-                         :val
-                         (transit-write
-                          (conj
-                           (seq
-                            [(normalize-data-object cont-id (second data))
-                             (normalize-data-object cont-id (nth data 2))])
-                           cont-id
-                           ))})))))
+     (then
+      (fn [data]
+        (println "update result " data)
+        (send-process #js{:type "command"
+                          :uid uid
+                          :val
+                          (transit-write
+                           (conj
+                            (seq
+                             [(normalize-data-object cont-id (second data))
+                              (normalize-data-object cont-id (nth data 2))])
+                            cont-id
+                            ))})))
+     (catch
+         (fn [[err-type error mx-error-group mx-error-code] _ _]
+           (process-command-error uid err-type error mx-error-group mx-error-code))))))
 
 (defn process-delete
   [uid args]
   (let  [[cont-id handle data uniqueid] (get-container args)]
-    (.then 
+    (..
      (if handle
        (pr/delete-data-with-handle cont-id uniqueid)
        (pr/delete-data-no-handle cont-id))
-     (fn [data]
-       (println "delete result " data)
-       (send-process #js{:type "command"
-                         :uid uid
-                         :val (transit-write true)})))))
+     (then
+      (fn [data]
+        (println "delete result " data)
+        (send-process #js{:type "command"
+                          :uid uid
+                          :val (transit-write true)})))
+     (catch
+         (fn [[err-type error mx-error-group mx-error-code] _ _]
+           (process-command-error uid err-type error mx-error-group mx-error-code))))))
 
 (defn process-metadata
   [uid args]
@@ -236,11 +267,16 @@
   (let [handle (aget args "handle");;same as parent-handle for rel containers
         columns (aget args "columns")
         metadata (pr/get-metadata handle columns)]
-    (.then metadata
-           (fn [_metadata]
-             (send-process #js {:type "command"
-                                :uid uid
-                                :val (transit-write _metadata)})))))
+    (..
+     metadata
+     (then
+      (fn [_metadata]
+        (send-process #js {:type "command"
+                           :uid uid
+                           :val (transit-write _metadata)})))
+     (catch
+         (fn [[err-type error mx-error-group mx-error-code] _ _]
+           (process-command-error uid err-type error mx-error-group mx-error-code))))))
 
 
 
