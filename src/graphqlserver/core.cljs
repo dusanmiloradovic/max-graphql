@@ -291,6 +291,8 @@
         value (aget m "val")
         pid (.-pid process)
         uid (aget m "uid")]
+    (.log js/console "procesing child message")
+    (.log js/console m)
     (condp = type
       "loggedout" (logged-out pid)
       "loggedin" (logged-in process value cb)
