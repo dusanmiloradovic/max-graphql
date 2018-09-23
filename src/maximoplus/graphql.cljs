@@ -160,6 +160,7 @@
 
 (defn process-command-error
   [uid [[error-type error-text mx-error-group mx-error-code] _ _]]
+  (println "processing command error")
   (let [error-text (if (or (= :js error-type)
                            (= :net error-type))
                      (.toString error-text)
