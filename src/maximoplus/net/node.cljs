@@ -33,13 +33,8 @@
              (if err
                (error-callback [[:net err] 6 (when resp (.-statusCode resp))]) ;;For the compatibility reasons with browser, I will use just 6 (error) and 0 no error
                (if (is-error? resp)
-                 (do
-                   (.log js/console "there has been an error")
-                   (.log js/console (.-statusCode resp))
-                   (error-callback [(transit-read body) 0 (.-statusCode resp)])
-                   )
+                 (error-callback [(transit-read body) 0 (.-statusCode resp)])
                  (let [tr-resp  [(transit-read body) 0 (.-statusCode resp)]]
-                  ;; (println tr-resp)
                    (callback tr-resp)))))))
 
 (deftype Node []

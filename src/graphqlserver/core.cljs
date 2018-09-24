@@ -291,6 +291,8 @@
         value (aget m "val")
         pid (.-pid process)
         uid (aget m "uid")]
+    (.log js/console "procesing child message")
+    (.log js/console m)
     (condp = type
       "loggedout" (logged-out pid)
       "loggedin" (logged-in process value cb)
@@ -383,10 +385,12 @@
   []
   (let [flt (get-filtered-types)]
     (map (fn [f]
-           {:name (aget f "name")
-            :fields (filter #(not= :scalar (:type %))
-                            (map get-field-data (aget f "fields")))})
+           (let [fnam (aget f "name")]
+             {:name fnam
+              :fields (filter #(or (= fnam "Mutation") (not= :scalar (:type %)))
+                              (map get-field-data (aget f "fields")))}))
          flt)))
+;;Mutation will allow children scalar fields to have resolvers (like save, rollback, delete). By definition, there will be only one scalar type return, and that is Boolean (instead of void). That is important, so I can simplify, and replace :scalar with Boolean in resolvers
 
 (defn get-scalar-fields
   [gql-type]
@@ -586,12 +590,13 @@
 
 (defn get-mutation-resolver
   [type field return-type]
+  (println field)
   (cond
       (.startsWith field "add") (get-add-mutation-resolver field return-type)
       (.startsWith field "delete") (get-delete-mutation-resolver field return-type)
       (.startsWith field "update") (get-update-mutation-resolver field return-type)
-      (= field "save" (get-save-mutation-resolver))
-      (= field "rollback" (get-rollback-mutation-resolver))
+      (= field "save") (get-save-mutation-resolver)
+      (= field "rollback") (get-rollback-mutation-resolver)
       :else (fn [x] x)))
 
 (defn get-query-resolver
