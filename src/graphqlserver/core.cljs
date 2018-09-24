@@ -35,15 +35,6 @@
   []
   (slurp "schema/sample.graphql"))
 
-(def books #js[#js{
-                   :title "Harry Potter and the Chamber of Secrets"
-                   :author "J.K. Rowling"
-                   }
-               #js{
-                   :title "Jurassic Park"
-                   :author "Michael Crichton"
-                   }]
-  )
 
 (defn get-ast-tree
   []
@@ -291,8 +282,6 @@
         value (aget m "val")
         pid (.-pid process)
         uid (aget m "uid")]
-    (.log js/console "procesing child message")
-    (.log js/console m)
     (condp = type
       "loggedout" (logged-out pid)
       "loggedin" (logged-in process value cb)
@@ -590,7 +579,6 @@
 
 (defn get-mutation-resolver
   [type field return-type]
-  (println field)
   (cond
       (.startsWith field "add") (get-add-mutation-resolver field return-type)
       (.startsWith field "delete") (get-delete-mutation-resolver field return-type)

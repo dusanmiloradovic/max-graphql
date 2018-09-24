@@ -52,6 +52,7 @@
   [message]
   ;;the script should communicate with the parent script through process.send
   ;;this is undefined however, if we run the standalone script for development purposes
+  (.log js/console message)
   (if (aget js/process "send")
     (.send js/process message)
     (do
@@ -62,19 +63,6 @@
 (.on js/process "uncaughtException"
      (fn [err] (u/debug "!" err)))
 
-
-;;(defn test-app
-;;  []
-;;
-;;  (let [a (AppContainer. "po" "po")
-;;;;        a (AppContainer. "po" "po")
-;;        g (Grid. a ["ponum" "status"] 20)
-;;        ]
-;;    (b/render-deferred g)
-;;    (b/init-data g)
-;;    (b/page-next g)
-;;    (b/fetch-more g 5)
-;;    ))
 
 (defn login
   [val] ;;credentials will be the javascripit object send from tne parent process
@@ -214,7 +202,7 @@
                            (conj
                             (seq
                              [(normalize-data-object cont-id (second data))
-                              (normalize-data-object cont-id (nth data 2))])
+                              (nth data 2)])
                             cont-id
                             ))})))
      (catch
@@ -237,11 +225,12 @@
                            (conj
                             (seq
                              [(normalize-data-object cont-id (second data))
-                              (normalize-data-object cont-id (nth data 2))])
+                              (nth data 2)])
                             cont-id
                             ))})))
      (catch
          (fn [err]
+           (.log js/console "ne radi " (.-stack  err))
            (process-command-error uid err))))))
 
 (defn process-delete

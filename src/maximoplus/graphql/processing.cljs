@@ -18,11 +18,13 @@
 (def data-changed-containers (atom []))
 ;;only the top level containers, where the saving should be done
 
-(defn add-to-data-change
+(defn add-to-data-change-old
   [container]
+  (println "calling add-to-data-change")
   (let [main-cont
         (loop [cnt container]
-          (let [prt (b/get-parent container)]
+          (println "loop cid" (c/get-id cnt))
+          (let [prt (b/get-parent cnt)]
             (if-not prt
               cnt
               (recur prt))))
@@ -30,6 +32,15 @@
     (when-not
         (contains? @data-changed-containers cont-id)
       (swap! data-changed-containers conj cont-id))))
+
+(defn add-to-data-change
+  [container]
+  ;;since rel containers are got using the uniquembocontainers, we can save idenpendetly
+  (let [cont-id (c/get-id container)]
+    (when-not
+        (contains? @data-changed-containers cont-id)
+      (swap! data-changed-containers conj cont-id))))
+
 
 (defn data-changed?
   [container-id]
