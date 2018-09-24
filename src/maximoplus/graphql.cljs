@@ -52,7 +52,6 @@
   [message]
   ;;the script should communicate with the parent script through process.send
   ;;this is undefined however, if we run the standalone script for development purposes
-  (.log js/console message)
   (if (aget js/process "send")
     (.send js/process message)
     (do
@@ -230,7 +229,6 @@
                             ))})))
      (catch
          (fn [err]
-           (.log js/console "ne radi " (.-stack  err))
            (process-command-error uid err))))))
 
 (defn process-delete
