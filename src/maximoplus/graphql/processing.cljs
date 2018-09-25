@@ -134,8 +134,10 @@
      (then
       (fn [_]
         (let [has-uniqueid? (when qbe (get qbe "id"))
-              _start-row (if has-uniqueid? 0 start-row)
-              _num-rows (if has-uniqueid? 1 num-rows)]
+              _start-row (if-not start-row 0
+                                 (if has-uniqueid? 0 start-row))
+              _num-rows (if-not num-rows 1
+                                (if has-uniqueid? 1 num-rows))]
           (b/fetch-data cont _start-row _num-rows nil nil))))
      (then
       (fn [[data _ _]]

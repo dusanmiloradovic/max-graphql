@@ -327,6 +327,7 @@
   ;;with this id, and the promise will be resolved
   (let [uid (uniqid)
         ch (chan)]
+    (println command-object)
     (swap! pending-messages assoc uid ch)
     (.send (:process (@child-processes pid))
            #js{:type "command"
@@ -456,11 +457,8 @@
           handle (aget args "_handle")
           parent-handle (aget obj "_handle")
           parent-id (aget obj "id")
-          rel-name (:rel-name test-names)
-          ;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
           pid (aget context "pid")
           qbe (aget args "qbe")
-          _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
           command-object #js{:command "fetch"
                              :args #js{:list-column (aget (.split field "-") 1)
                                        :columns (get-maximo-scalar-fields return-type)
@@ -484,8 +482,7 @@
           handle (aget args "_handle")
           parent-handle (aget obj "_handle")
           parent-id (aget obj "id")
-          rel-name (:rel-name test-names)
-          ;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
+          rel-name field
           pid (aget context "pid")
           qbe (aget args "qbe")
           _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
