@@ -227,7 +227,7 @@
   [container-id]
   (let [cont (@registered-containers container-id)]
     (if-not cont
-      (reject [[:js (js/Error. "Invalid handle")] 6 nil])
+      (.reject js/Promise [[:js (js/Error. "Invalid handle")] 6 nil])
       (prom-then->
        (b/del-row cont nil nil)
        (fn [_]
@@ -282,7 +282,7 @@
   [container-id columns]
   (let [cont (@registered-containers container-id)]
     (if-not cont
-      (reject [[:js (js/Error. "Invalid handle")] 6 nil])
+      (.reject js/Promise [[:js (js/Error. "Invalid handle")] 6 nil])
       (.then
        (b/register-columns cont columns nil nil)
        (fn [_]
