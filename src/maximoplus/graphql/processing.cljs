@@ -143,99 +143,123 @@
 
 (defn add-data
   [container-id data]
-  (let [cont (@registered-containers container-id)
-        columns (js-keys data)]
-    (prom-then->
-     (b/register-columns cont columns nil nil)
-     (b/add-new-row cont nil nil)
-     (.all js/Promise
-           (clj->js
-            (map
-             (fn [c](b/set-value cont c (aget data c) nil nil))
-             columns)))
-     (b/fetch-current cont nil nil)
-     (fn [data]
-       (add-to-data-change cont)
-       (get-fetched-row-data [0 (first data)]))))) 
+  (js/Promise.
+   (fn [resolve reject]
+     (let [cont (@registered-containers container-id)
+           columns (js-keys data)]
+       (if-not cont
+         (reject [[:js (js/Error. "Invalid handle")] 6 nil])
+         (prom-then->
+          (b/register-columns cont columns nil nil)
+          (b/add-new-row cont nil nil)
+          (.all js/Promise
+                (clj->js
+                 (map
+                  (fn [c](b/set-value cont c (aget data c) nil nil))
+                  columns)))
+          (b/fetch-current cont nil nil)
+          (fn [data]
+            (add-to-data-change cont)
+            (get-fetched-row-data [0 (first data)])))))))) 
 
 (defn update-data-with-handle
   [container-id uniqueid data]
-  (let [cont (@registered-containers container-id)
-        columns (js-keys data)
-        _uniqueid (js/parseInt uniqueid)]
-
-    (prom-then->
-     (b/register-columns cont columns nil nil)
-     (b/move-to-uniqueid cont _uniqueid nil nil)
-     (.all js/Promise
-           (clj->js
-            (map
-             (fn [c](b/set-value cont c (aget data c) nil nil))
-             columns)))
-     (b/fetch-current cont nil nil)
-     (fn [data]
-       (add-to-data-change cont)
-       (get-fetched-row-data [0 (first data)])))))
+  (js/Promise.
+   (fn [resolve reject]
+     (let [cont (@registered-containers container-id)
+           columns (js-keys data)
+           _uniqueid (js/parseInt uniqueid)]
+       (if-not cont
+         (reject [[:js (js/Error. "Invalid handle")] 6 nil])
+         (resolve
+          (prom-then->
+           (b/register-columns cont columns nil nil)
+           (b/move-to-uniqueid cont _uniqueid nil nil)
+           (.all js/Promise
+                 (clj->js
+                  (map
+                   (fn [c](b/set-value cont c (aget data c) nil nil))
+                   columns)))
+           (b/fetch-current cont nil nil)
+           (fn [data]
+             (add-to-data-change cont)
+             (get-fetched-row-data [0 (first data)])))))))))
 
 ;;the difference is that if there is no handle we already get the unique container, we need just to update the data
 (defn update-data-no-handle
   [container-id  data]
-  (let [cont (@registered-containers container-id)
-        columns (js-keys data)]
-    (prom-then->
-     (b/register-columns cont columns nil nil)
-     (.all js/Promise
-           (clj->js
-            (map
-             (fn [c](b/set-value cont c (aget data c) nil nil))
-             columns)))
-     (b/fetch-current cont nil nil)
-     (fn [data]
-       (add-to-data-change cont)
-       (get-fetched-row-data [0 (first data)])))))
+  (js/Promise.
+   (fn [resolve reject]
+     (let [cont (@registered-containers container-id)
+           columns (js-keys data)]
+       (if-not cont
+         (reject [[:js (js/Error. "Invalid handle")] 6 nil])
+         (resolve
+          (prom-then->
+           (b/register-columns cont columns nil nil)
+           (.all js/Promise
+                 (clj->js
+                  (map
+                   (fn [c](b/set-value cont c (aget data c) nil nil))
+                   columns)))
+           (b/fetch-current cont nil nil)
+           (fn [data]
+             (add-to-data-change cont)
+             (get-fetched-row-data [0 (first data)])))))))))
 
 (defn delete-data-with-handle
   [container-id uniqueid]
-  (let [cont (@registered-containers container-id)
-        _uniqueid (js/parseInt uniqueid)]
-    (prom-then->
-     (b/move-to-uniqueid cont _uniqueid nil nil)
-     (b/del-row cont nil nil)
-     (fn [_]
-       (add-to-data-change cont)))))
+  (js/Promise.
+   (fn [resolve reject]
+     (let [cont (@registered-containers container-id)
+           _uniqueid (js/parseInt uniqueid)]
+       (if-not cont
+         (reject [[:js (js/Error. "Invalid handle")] 6 nil])
+         (resolve
+          (prom-then->
+           (b/move-to-uniqueid cont _uniqueid nil nil)
+           (b/del-row cont nil nil)
+           (fn [_]
+             (add-to-data-change cont)))))))))
 
 ;;if there is no handle that means that the container is unique
 (defn delete-data-no-handle
   [container-id]
   (let [cont (@registered-containers container-id)]
-    (prom-then->
-     (b/del-row cont nil nil)
-     (fn [_]
-       (add-to-data-change cont)))))
+    (if-not cont
+      (reject [[:js (js/Error. "Invalid handle")] 6 nil])
+      (prom-then->
+       (b/del-row cont nil nil)
+       (fn [_]
+         (add-to-data-change cont))))))
 
 (defn save-changed
   []
   (when-not (empty? @data-changed-containers)
     (let [cnt-id (first @data-changed-containers)
           cont (@registered-containers cnt-id)]
-      (..
-       (b/save cont nil nil)
-       (then
-        (fn [_]
-          (reset! data-changed-containers (vec (rest @data-changed-containers)))
-          (save-changed)))))))
+      (if-not cont
+        (.reject js/Promise [[:js (js/Error. "invalid container for save")] 6 nil] )
+        (..
+         (b/save cont nil nil)
+         (then
+          (fn [_]
+            (reset! data-changed-containers (vec (rest @data-changed-containers)))
+            (save-changed))))))))
 
 (defn rollback-changed
   []
   (when-not (empty? @data-changed-containers)
     (let [cnt-id (first @data-changed-containers)
           cont (@registered-containers cnt-id)]
-      (..
-       (b/reset cont nil nil)
-       (then
-        (fn [_]
-          (reset! data-changed-containers (vec (rest @data-changed-containers)))
-          (rollback-changed)))))))
+      (if-not cont
+        (.reject js/Promise [[:js (js/Error. "invalid container for rollback")] 6 nil] )
+        (..
+         (b/reset cont nil nil)
+         (then
+          (fn [_]
+            (reset! data-changed-containers (vec (rest @data-changed-containers)))
+            (rollback-changed))))))))
 
 (defn get-data
   [app-name
@@ -257,8 +281,10 @@
 (defn get-metadata
   [container-id columns]
   (let [cont (@registered-containers container-id)]
-    (.then
-     (b/register-columns cont columns nil nil)
-     (fn [_]
-       (map (fn [col] (get-column-metadata container-id col))
-            columns)))))
+    (if-not cont
+      (reject [[:js (js/Error. "Invalid handle")] 6 nil])
+      (.then
+       (b/register-columns cont columns nil nil)
+       (fn [_]
+         (map (fn [col] (get-column-metadata container-id col))
+              columns))))))
