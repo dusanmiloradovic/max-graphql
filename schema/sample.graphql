@@ -5,8 +5,8 @@
 type Query {
   #  books: [Book]
   # book(author:String): Book
-   po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
-#  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
+#   po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
 }
 
 #obrisi ovo kada ide u prod, iz gaska
@@ -18,7 +18,8 @@ type POSTD{
   status:String
   _handle:String
   polinestd(fromRow:Int,numRows:Int, _handle:String, qbe:POLINESTDQBE):[POLINESTD]
-  list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN] 
+  list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN]
+  pochangestatus(_handle:String):[POCHANGESTATUS] #non persistent mbosets usually have only one record (TODO make that option in the front end tool, this should be the output for non persistent relationship field
 }
 
 input POSTDQBE{
@@ -66,6 +67,7 @@ type PO{
   list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN] 
   _handle:String
   _metadata:POMetadata
+  pochangestatus(_handle:String):[POCHANGESTATUS] #non persistent mbosets usually have only one record (TODO make that option in the front end tool, this should be the output for non persistent relationship field
 }
 
 #For the qbe types all paramenters will be string except the id
@@ -178,20 +180,27 @@ input ALNDOMAINQBE{
   description:String
 }
 
+type POCHANGESTATUS{
+  status:String
+  memo:String
+  statdate:String
+  _handle:String #no id - it is non-persistent
+}
+
 
 type Mutation{
-#  addPO(_handle:String,data:POInput):PO
-#  updatePO(_handle:String,id:ID,data:POInput):PO
-#  deletePO(_handle:String,id:ID):Boolean
-#  addPOLINE(_handle:String,data:POLINEInput):POLINE
-#  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
-#  deletePOLINE(_handle:String,id:ID):Boolean
-  addPO(_handle:String,data:POSTDInput):POSTD
-  updatePO(_handle:String,id:ID,data:POSTDInput):POSTD
+  addPO(_handle:String,data:POInput):PO
+  updatePO(_handle:String,id:ID,data:POInput):PO
   deletePO(_handle:String,id:ID):Boolean
-  addPOLINE(_handle:String,data:POLINESTDInput):POLINESTD
-  updatePOLINE(_handle:String,id:ID,data:POLINESTDInput):POLINESTD
+  addPOLINE(_handle:String,data:POLINEInput):POLINE
+  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
   deletePOLINE(_handle:String,id:ID):Boolean
+#  addPO(_handle:String,data:POSTDInput):POSTD
+#  updatePO(_handle:String,id:ID,data:POSTDInput):POSTD
+#  deletePO(_handle:String,id:ID):Boolean
+#  addPOLINE(_handle:String,data:POLINESTDInput):POLINESTD
+#  updatePOLINE(_handle:String,id:ID,data:POLINESTDInput):POLINESTD
+#  deletePOLINE(_handle:String,id:ID):Boolean
   save:Boolean
   rollback:Boolean
 }
