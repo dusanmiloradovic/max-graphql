@@ -45,14 +45,6 @@
 
 (declare get-maximo-scalar-fields)
 
-;;(def test-names {:app "po"
-;;                 :object-name "POSTD"
-;;                 :rel-name "POLINESTD"})
-
-(def test-names {:app "po"
-                 :object-name "PO"
-                 :rel-name "POLINE"})
-
 (defn process-data-rows
   [res]
   (let [component-id (first res)
@@ -92,63 +84,6 @@
 
 (def rel-temp-promises (atom {}))
 
-;;this is too complicated, and throws maximum call size exceeded
-;;I am making MVP, leave this just in case someone requests this functionality(all the lines to have the same handle)
-(defn test-poline-resolver-old
-  [obj args context info]
-  (let [from-row (aget args "fromRow")
-        num-rows (aget args "numRows")
-        handle (aget args "_handle")
-        parent-handle (aget obj "_handle")
-        parent-id (aget obj "id")
-        rel-name (:rel-name test-names)
-;;        context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })
-        pid (aget context "pid")
-        qbe (aget args "qbe")
-        _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
-        command-object #js{:command "fetch"
-                           :args #js{:relationship rel-name
-                                     :columns (get-maximo-scalar-fields (:rel-name test-names))
-                                     :parent-handle parent-handle 
-                                     :parent-id (aget obj "id")
-                                     :start-row from-row
-                                     :num-rows num-rows
-                                     :handle handle
-                                     :qbe qbe
-                                     }}
-        res-p (if-let [ex-prom (@rel-temp-promises {:pid pid :parent-handle parent-handle :rel-name rel-name})]
-                (let [new-prom (.then ex-prom
-                                      (fn [_]
-                                        (let [context-handle (@(aget context "rel-handles") {:parent-handle parent-handle :rel-name rel-name })]
-                                          (println "sending command for parent-id " parent-id " and context handle " context-handle)
-                                          (when-not (aget command-object "handle")
-                                            (aset (aget command-object "args" ) "handle" context-handle))
-                                          (send-graphql-command pid command-object))))]
-                  (swap! rel-temp-promises assoc
-                         {:pid pid :parent-handle parent-handle :rel-name rel-name}
-                         new-prom)
-                  new-prom)
-                (let [_ (println "sending command for parent-id " parent-id)
-                      rs (send-graphql-command pid command-object)
-                      new-prm (.then rs
-                                     (fn [rs]
-                                       (swap! (aget context "rel-handles")
-                                              assoc
-                                              {:parent-handle parent-handle :rel-name rel-name}
-                                              (first rs))
-                                       rs
-                                       ))]
-                  (swap! rel-temp-promises assoc
-                         {:pid pid :parent-handle parent-handle :rel-name rel-name}
-                         new-prm)
-                  new-prm))
-        ]
-    (.then res-p
-           (fn [res]
-             (println "got the response for the parent id " parent-id)
-             (process-data-rows res)))))
-
-;;here every line will have a different handle. Think about the save, how it should work (this will go to the relationship to the parent uniquembocontainer)
 
 (defn max-session-check-middleware
   [req res next]
