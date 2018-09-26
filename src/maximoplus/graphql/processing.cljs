@@ -89,7 +89,7 @@
         app-name (aget args "app")
         qbe (aget args "qbe")
         uniqueid (if qbe
-                   (aget qbe "id")
+                   (get qbe "id")
                    (aget args "id"))]
     (let [cont
           (if list-column
@@ -108,7 +108,7 @@
 (defn set-qbe
   [cont qbe]
   (swap! registered-qbe assoc (c/get-id cont) qbe)
-  (if-let [uniqueid  (aget qbe "id")]
+  (if-let [uniqueid  (get qbe "id")]
     (b/move-to-uniqueid cont (js/parseInt uniqueid) nil nil)
     (prom->
      (.all js/Promise
@@ -133,9 +133,11 @@
             (set-qbe cont qbe)))))
      (then
       (fn [_]
-        (let [has-uniqueid? (when qbe (aget qbe "uniqueid"))
-              _start-row (if has-uniqueid? 0 start-row)
-              _num-rows (if has-uniqueid? 1 num-rows)]
+        (let [has-uniqueid? (when qbe (get qbe "id"))
+              _start-row (if-not start-row 0
+                                 (if has-uniqueid? 0 start-row))
+              _num-rows (if-not num-rows 1
+                                (if has-uniqueid? 1 num-rows))]
           (b/fetch-data cont _start-row _num-rows nil nil))))
      (then
       (fn [[data _ _]]
