@@ -139,7 +139,7 @@
         data (aget args "data")
         uniqueid (aget args "id")
         ]
-    [(if (and handle (@pr/registered-containers handle)) handle
+    [(if handle handle
          (pr/register-container args))
      handle
      data
