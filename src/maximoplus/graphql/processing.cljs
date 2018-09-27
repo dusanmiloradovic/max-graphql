@@ -177,13 +177,15 @@
    (fn [resolve reject]
      (let [cont (@registered-containers container-id)
            columns (js-keys data)
-           _uniqueid (js/parseInt uniqueid)]
+           _uniqueid (when uniqueid (js/parseInt uniqueid))]
        (if-not cont
          (reject [[:js (js/Error. "Invalid handle")] 6 nil])
          (resolve
           (prom-then->
            (b/register-columns cont columns nil nil)
-           (b/move-to-uniqueid cont _uniqueid nil nil)
+           (if (not _uniqueid)
+             (.resolve js/Promise nil);;when no id, update the current one
+             (b/move-to-uniqueid cont _uniqueid nil nil))
            (.all js/Promise
                  (clj->js
                   (map
