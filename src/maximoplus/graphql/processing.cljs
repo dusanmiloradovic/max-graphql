@@ -108,40 +108,47 @@
 (defn set-qbe
   [cont qbe]
   (swap! registered-qbe assoc (c/get-id cont) qbe)
-  (if-let [uniqueid  (get qbe "id")]
-    (b/move-to-uniqueid cont (js/parseInt uniqueid) nil nil)
-    (prom->
-     (.all js/Promise
-           (clj->js
-            (map (fn [[k v]]
-                   (b/set-qbe cont k v nil nil))
-                 qbe)))
-     (b/reset cont nil nil))))
+  (prom->
+   (.all js/Promise
+         (clj->js
+          (map (fn [[k v]]
+                 (b/set-qbe cont k v nil nil))
+               qbe)))
+   (b/reset cont nil nil)))
+
+(defn fetch-with-uniqueid
+  [container-id uniqueid]
+  ;;if there is uniquid, I will fetch one record only
+  (let [cont (@registered-containers container-id)]
+    (prom-then->
+     (b/move-to-uniqueid cont (js/parseInt uniqueid) nil nil)
+     (b/fetch-current cont nil nil)
+     (fn [[data _ _]]
+       [(get-fetched-row-data [0 data])]))))
 
 (defn fetch-data
   [container-id columns start-row num-rows qbe]
   ;; all the graphql error handling needs to be done inline here, so I need promise, but i think capturing will be done in the outermost loop
-  (let [cont (@registered-containers container-id)]
-    (..
-     (b/register-columns cont columns nil nil)
-     (then
-      (fn [_]
-        (if (and qbe (not= qbe (@registered-qbe container-id)))
-          (if (data-changed? container-id)
-            ;;            (throw (js/Error. "Data changed, first rollback or save the data"))
-            (.reject js/Promise [[:js (js/Error. "Data changed, first rollback or save the data")] 6 nil])
-            (set-qbe cont qbe)))))
-     (then
-      (fn [_]
-        (let [has-uniqueid? (when qbe (get qbe "id"))
-              _start-row (if-not start-row 0
-                                 (if has-uniqueid? 0 start-row))
-              _num-rows (if-not num-rows 1
-                                (if has-uniqueid? 1 num-rows))]
-          (b/fetch-data cont _start-row _num-rows nil nil))))
-     (then
-      (fn [[data _ _]]
-        (filter some? (map get-fetched-row-data data)))))))
+  (if-let [uniqueid (get qbe "id")]
+    (fetch-with-uniqueid container-id uniqueid)
+    (let [cont (@registered-containers container-id)]
+      (..
+       (b/register-columns cont columns nil nil)
+       (then
+        (fn [_]
+          (if (and qbe (not= qbe (@registered-qbe container-id)))
+            (if (data-changed? container-id)
+              ;;            (throw (js/Error. "Data changed, first rollback or save the data"))
+              (.reject js/Promise [[:js (js/Error. "Data changed, first rollback or save the data")] 6 nil])
+              (set-qbe cont qbe)))))
+       (then
+        (fn [_]
+          (let [_start-row (if-not start-row 0 start-row)
+                _num-rows (if-not num-rows 1 num-rows)]
+            (b/fetch-data cont _start-row _num-rows nil nil))))
+       (then
+        (fn [[data _ _]]
+          (filter some? (map get-fetched-row-data data))))))))
 
 (defn add-data
   [container-id data]
