@@ -290,6 +290,22 @@
        (fn [err]
          (process-command-error uid err)))))
 
+(defn process-execute
+  [uid args]
+  (let [container-id (aget args "handle")
+        command (aget args "command")
+        id (aget)
+        mbo? (aget args "mbo")]
+    (..
+     (pr/execute-command container-id id command mbo?)
+     (then
+      (fn [_]
+        (send-process #js{:type "command"
+                          :uid uid
+                          :val (transit-write true)})))
+     (catch
+         (fn [err] (process-command-error uid err))))))
+
 
 (defn process-command
   [uid val]
@@ -303,6 +319,7 @@
       "metadata" (process-metadata uid args)
       "save" (process-save uid)
       "rollback" (process-rollback uid)
+      "execute" (process-execute uid args)
       :default)))
 
 (.on js/process "message"

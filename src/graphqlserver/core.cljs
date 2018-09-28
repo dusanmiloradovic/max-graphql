@@ -491,6 +491,22 @@
           res-p (send-graphql-command pid command-object)]
       (.then res-p (fn [_] true)))))
 
+(defn get-command-mutation-resolver
+  [field return-type]
+  (fn [obj args context info]
+    (let [handle (aget args "_handle")
+          pid (aget context "pid")
+          id (aget args "id")
+          command (aget args "command")
+          isMbo (aget args "isMbo")
+          command-object #js{:command "execute"
+                             :args #js{:handle handle
+                                       :id id
+                                       :command command
+                                       :mbo isMbo}}
+          res-p (send-graphql-command pid command-object)]
+      (.then res-p (fn [_] true)))))
+
 (defn get-save-mutation-resolver
   ;;saves all the changes for the user
   []
@@ -515,6 +531,7 @@
       (.startsWith field "add") (get-add-mutation-resolver field return-type)
       (.startsWith field "delete") (get-delete-mutation-resolver field return-type)
       (.startsWith field "update") (get-update-mutation-resolver field return-type)
+      (.startsWith field "command") (get-command-mutation-resolver field return-type)
       (= field "save") (get-save-mutation-resolver)
       (= field "rollback") (get-rollback-mutation-resolver)
       :else (fn [x] x)))

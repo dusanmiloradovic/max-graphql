@@ -274,6 +274,19 @@
             (reset! data-changed-containers (vec (rest @data-changed-containers)))
             (rollback-changed))))))))
 
+(defn execute-command
+  [container-id uniqueid command mbo?]
+  (let [cont (@registered-containers container-id)]
+    (if-not cont
+      (.reject js/Promise [[:js (js/Error. "Invalid handle")] 6 nil])
+      (prom-then->
+       (if uniqueid
+         (c/move-to cont uniqueid nil nil)
+         (.resolve js/Promise nil))
+       (if mbo?
+         (b/mbo-command cont command nil nil nil)
+         (b/mboset-command cont command nil nil nil))))))
+
 (defn get-data
   [app-name
    object-name
