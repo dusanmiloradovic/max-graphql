@@ -279,7 +279,7 @@
   (let [cont (@registered-containers container-id)]
     (if-not cont
       (.reject js/Promise [[:js (js/Error. "Invalid handle")] 6 nil])
-      (prom-then->
+      (prom->
        (if uniqueid
          (c/move-to cont uniqueid nil nil)
          (.resolve js/Promise nil))

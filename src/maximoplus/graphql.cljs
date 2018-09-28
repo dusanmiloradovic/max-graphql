@@ -294,7 +294,7 @@
   [uid args]
   (let [container-id (aget args "handle")
         command (aget args "command")
-        id (aget)
+        id (aget args "id")
         mbo? (aget args "mbo")]
     (..
      (pr/execute-command container-id id command mbo?)
@@ -304,7 +304,9 @@
                           :uid uid
                           :val (transit-write true)})))
      (catch
-         (fn [err] (process-command-error uid err))))))
+         (fn [err]
+           (println "zasto " err)
+           (process-command-error uid err))))))
 
 
 (defn process-command
