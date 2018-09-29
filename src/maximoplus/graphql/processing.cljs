@@ -61,17 +61,16 @@
       cont)))
 
 (defn register-rel-container
-  [parent-id parent-object-name rel-name ]
-  ;;TODO now i will create the uniquembocotnaiers for each row. That might complicate things during
-  ;;the save. Another option will be the new type of container - like SingleMboContainer, but it will not be reset when the row changes, and it accepts the row number in the constructor
-  (let [u (UniqueMboContainer. parent-object-name parent-id)
+  [parent-id parent-handle rel-name ]
+  (let [u (SingleMboContainer. parent-handle parent-id)
         r (RelContainer. u rel-name)]
     (swap! registered-containers assoc (get-id r) r)
     r))
 
 (defn register-list-container
   [parent-id parent-object-name column-name]
-  (let [u (UniqueMboContainer. parent-object-name parent-id)
+  (let [parent-cont (@registered-containers parent-handle)
+        u (UniqueMboContainer. parent-object-name parent-id)
         r (ListContainer. u column-name)]
     (swap! registered-containers assoc (get-id r) r)
     r))
@@ -94,12 +93,13 @@
     (let [cont
           (if list-column
             (register-list-container parent-id parent-object list-column)
-            (if relationship (register-rel-container  parent-id parent-object relationship)
-                (if uniqueid
-                  (if app-name
-                    (UniqueMboAppContainer. object-name app-name uniqueid)
-                    (UniqueMboContainer. object-name uniqueid))
-                  (AppContainer. object-name app-name))))]
+            (if relationship
+              (register-rel-container  parent-id parent-handle relationship)
+              (if uniqueid
+                (if app-name
+                  (UniqueMboAppContainer. object-name app-name uniqueid)
+                  (UniqueMboContainer. object-name uniqueid))
+                (AppContainer. object-name app-name))))]
       (swap! registered-containers assoc (get-id cont) cont )
       (get-id cont))))
 
