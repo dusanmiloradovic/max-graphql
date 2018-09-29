@@ -1,5 +1,5 @@
 (ns maximoplus.graphql.processing
-  (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer UniqueMboContainer]]
+  (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer UniqueMboContainer SingleMboContainer]]
             [maximoplus.core :as c :refer [get-id get-fetched-row-data get-column-metadata]]
             [maximoplus.promises :as p])
   (:require-macros [maximoplus.graphql.processing :refer [prom-> prom-then->]]))
@@ -62,15 +62,15 @@
 
 (defn register-rel-container
   [parent-id parent-handle rel-name ]
-  (let [u (SingleMboContainer. parent-handle parent-id)
+  (let [parent-cont (@registered-containers parent-handle)
+        u (SingleMboContainer. parent-handle parent-id)
         r (RelContainer. u rel-name)]
     (swap! registered-containers assoc (get-id r) r)
     r))
 
 (defn register-list-container
   [parent-id parent-object-name column-name]
-  (let [parent-cont (@registered-containers parent-handle)
-        u (UniqueMboContainer. parent-object-name parent-id)
+  (let [u (UniqueMboContainer. parent-object-name parent-id)
         r (ListContainer. u column-name)]
     (swap! registered-containers assoc (get-id r) r)
     r))
