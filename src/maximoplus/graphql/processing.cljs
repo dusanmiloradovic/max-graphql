@@ -63,7 +63,7 @@
 (defn register-rel-container
   [parent-id parent-handle rel-name ]
   (let [parent-cont (@registered-containers parent-handle)
-        u (SingleMboContainer. parent-handle parent-id)
+        u (SingleMboContainer. parent-cont parent-id)
         r (RelContainer. u rel-name)]
     (swap! registered-containers assoc (get-id r) r)
     r))

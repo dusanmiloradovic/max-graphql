@@ -5,8 +5,8 @@
 type Query {
   #  books: [Book]
   # book(author:String): Book
-#   po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
-  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
+   po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+#  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
 }
 
 #obrisi ovo kada ide u prod, iz gaska
@@ -195,24 +195,27 @@ input POCHANGESTATUSInput{
 
 
 type Mutation{
-  addPO(_handle:String,data:POInput):PO
-  updatePO(_handle:String,id:ID,data:POInput):PO
-  deletePO(_handle:String,id:ID):Boolean
-  addPOLINE(_handle:String,data:POLINEInput):POLINE
-  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
-  deletePOLINE(_handle:String,id:ID):Boolean
-  updatePOCHANGESTATUS(_handle:String,id:ID,data:POCHANGESTATUSInput):POCHANGESTATUS
+#  addPO(_handle:String,data:POInput):PO
+#  updatePO(_handle:String,id:ID,data:POInput):PO
+#  deletePO(_handle:String,id:ID):Boolean
+#  addPOLINE(_handle:String,data:POLINEInput):POLINE
+#  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
+#  deletePOLINE(_handle:String,id:ID):Boolean
+#  updatePOCHANGESTATUS(_handle:String,id:ID,data:POCHANGESTATUSInput):POCHANGESTATUS
+#  commandPOCHANGESTATUS(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
 #  deletePOCHANGESTATUS(_handle:String,id:ID):POCHANGESTATUS
  # addPOCHANGESTATUS(_handle:String,data:POCHANGESTATUSInput):POCHANGESTATUS
   #since this is non persistent, update poCHANGEStatus is only required (no add or delete make sense, maybe it ddoes in general case)!!!. Think about removing the id. In any case change the logic for any update and delete - if there is no ID, update or delete the current item in MboSet 
-  commandPOCHANGESTATUS(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
+
 # same as the update, most probably id will not be included, because usually the command will be on non-persisten mbo, but in case it is persistent, we need the 
-#  addPO(_handle:String,data:POSTDInput):POSTD
-#  updatePO(_handle:String,id:ID,data:POSTDInput):POSTD
-#  deletePO(_handle:String,id:ID):Boolean
-#  addPOLINE(_handle:String,data:POLINESTDInput):POLINESTD
-#  updatePOLINE(_handle:String,id:ID,data:POLINESTDInput):POLINESTD
-#  deletePOLINE(_handle:String,id:ID):Boolean
+  addPO(_handle:String,data:POSTDInput):POSTD
+  updatePO(_handle:String,id:ID,data:POSTDInput):POSTD
+  deletePO(_handle:String,id:ID):Boolean
+  addPOLINE(_handle:String,data:POLINESTDInput):POLINESTD
+  updatePOLINE(_handle:String,id:ID,data:POLINESTDInput):POLINESTD
+  deletePOLINE(_handle:String,id:ID):Boolean
+  updatePOCHANGESTATUS(_handle:String,id:ID,data:POCHANGESTATUSInput):POCHANGESTATUS
+  commandPOCHANGESTATUS(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
   save:Boolean
   rollback:Boolean
 }
