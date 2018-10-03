@@ -16,7 +16,18 @@
 ;;once the wf is finished it will be removed from here
 
 (defn process-wf-result
-  [res wf-action-set])
+  [[res _ _] wf-action-set]
+  (println res))
+
+;;when processing the callback of the workflow action, we will get (refer to the basecontriols workflow command container which we don;t use here)
+;;the warnnings, title, information has the workflow been finished, or in the case it is interaction node, the interaction data( which app, tab, etc)
+;;in case user action is required I will send the type (INPUTWF, COMPLETEWF) and the handle to graphql
+
+(defn process-reassign-result
+  [[res _ _] wf-action-set]
+  (println res))
+
+
 
 (defn get-wf-director
   [app-container wf-process-name]
@@ -40,14 +51,40 @@
   [app-container action-id memo]
   ;;there is no point in separating this in two functions, one that will execute this, and another that will update the InputWF data. We have to do it manuaully.
   (if-let [action-set (c/get-state app-contanier :wf-action-set)]
-    (prom-then>
+    (prom-then->
      (prom-command! c/set-value action-set "actionid" action-id )
      (prom-command! c/set-value action-set "memo" memo)
      (prom-command! c/choose-wf-action (c/get-id app-container) action-set);;director and app container have the same id
      (fn [res]
-       (process-wf-result res action-set)))))
+       (process-wf-result res action-set)))
+    (throw  (js/Error. "Invalid action set id"))))
 
-(defn reassign-wf
-  [app-cntainer personid memo send-mail])
-;;TODO this will be the same as choose-wf-action. !!Make sure there is a check what can be called at what status (can't reassing in inputwf was returned for example
+;;to make the things consistent, reassigning will be two step process - first initiate it, get the list of values in  the reassign mbo, and the next function is to actually reassing. If I do it in one function like below, there will be no list of values (like below)
+;;(defn reassign-wf-old
+;;  [app-container personid memo send-mail]
+;;  (let [reassign-set-id (b/get-next-unique-id)]
+;;    (prom->
+;;     (prom-command! c/reassign-wf reassign-set-id (c/get-id app-container))
+;;     (prom-command! c/set-value reassing-set-id "personid" personid)
+;;     (prom-command! c/set-value reassing-set-id "memo" memo)
+;;     (prom-command! c/execute-reassign-wf reassign-set-id (c/get-id app-container) ))))
+
+(defn init-reassign-wf
+  [app-container]
+  (let [reassign-set-id (b/get-next-unique-id)]
+    (prom-then->
+     (prom-command! c/reassign-wf reassign-set-id (c/get-id app-container))
+     (fn [res]
+       (c/toggle-state app-container :wf-reassign-set reassign-set-id)
+       (proces-reassign-result res reassign-set-id)))))
+
+(defn process-reassign-wf
+  [app-container personid memo send-mail]
+  (if-let [reassign-set-id (c/get-state app-container :wf-reassign-set)]
+    (prom-then->
+     (prom-command! c/set-value reassing-set-id "personid" personid)
+     (prom-command! c/set-value reassing-set-id "memo" memo)
+     (prom-command! c/set-value reassing-set-id "send-main" send-mail)
+     (prom-command! c/execute-reassign-wf reassign-set-id (c/get-id app-container) ))
+    (throw  (js/Error. "Invalid reassign set id"))))
 
