@@ -14,7 +14,6 @@
             )
   (:require-macros [maximoplus.macros :as mm :refer [def-comp googbase kk! kk-nocb! kk-branch-nocb! p-deferred p-deferred-on custom-this kc!]]
                    [cljs.core.async.macros :refer [go]]
-                   [maximoplus.graphql.processing :refer [prom prom->]]
                    ))
 
 (n/set-net-type (Node.))

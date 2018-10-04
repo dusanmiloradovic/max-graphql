@@ -16,4 +16,14 @@
       (prom-> ~@_args)
       ~fun-ex)))
 
+(defmacro prom-command!
+  [command-f & args]
+  `(maximoplus.promises.get-promise
+    (fn [resolve# reject#]
+      (~command-f @args
+       (fn [ok#]
+         (resolve# ok#))
+       (fn [err#]
+         (reject# err#))))))
+
 
