@@ -1,10 +1,10 @@
 (ns maximoplus.graphql.components
-  (:require [maximoplus.basecontrols :as b :refer [UI Field Row Table ControlData Foundation Dialog Picker Workflow GL]]
+  (:require [maximoplus.basecontrols :as b :refer [UI Field Row Table ControlData Foundation Dialog Picker Workflow GL MboContainer BaseComponent]]
             [maximoplus.core :as c]
             [maximoplus.utils :as u]
-            [cljs.core.async :as a :refer [<! timeout]])
+            [cljs.core.async :as a :refer [<! timeout promise-chan put!]])
   (:require-macros [maximoplus.macros :as mm :refer [def-comp googbase kk! kk-nocb! kk-branch-nocb! p-deferred p-deferred-on react-call with-react-props react-prop react-update-field react-call-control react-loop-fields loop-arr]]
-                   [cljs.core.async.macros :refer [go-loop]])
+                   [cljs.core.async.macros :refer [go-loop go]])
   )
 
 (def pending-subscription-events
@@ -130,4 +130,26 @@
    [this row])
   (^override render-row-before
    [this row existing-row])
+  )
+
+;;for the workflow we don't use the workflowcontrol in graphql implementation, we use the plain functions.
+;;we provide only the id of the return action set (inputwf or completewf) , and server registers the mboset
+;;the drawback is that we need the mbocontaioer to fit it with the fetch resolver.
+;;this just attaches the id to the mboset, it doesn't register anything
+
+(def-comp AttachToExisting [containerid] MboContainer
+  (^override fn* []
+   (this-as this
+     (.call BaseComponent this)
+     (aset this "uniqueid" containerid)
+     (c/add-container-to-registry this)
+     (let [deferred (promise-chan)]
+       (c/set-states this
+                     {:currrow -1
+                      :uniqueid containerid
+                      :offlineenabled false
+                      :iscontainer true
+                      :deferred deferred
+                      })
+       (go (put! deferred containerid)))))
   )
