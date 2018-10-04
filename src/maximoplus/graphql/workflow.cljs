@@ -6,7 +6,7 @@
             )
   (:require-macros [maximoplus.macros :as mm :refer [def-comp googbase kk! kk-nocb! kk-branch-nocb! p-deferred p-deferred-on react-call with-react-props react-prop react-update-field react-call-control react-loop-fields loop-arr prom-command!]]
                    [cljs.core.async.macros :refer [go go-loop]]
-                   [maximoplus.graphql.proocessing :refer [prom-> prom-then->]])
+                   [maximoplus.graphqlmacros :refer [prom-> prom-then->]])
   )
 
 ;;the existing workflow component from core library will be very difficult to use in apollo server. Here I will just have the set of functions that will be called from the mutation resolvers

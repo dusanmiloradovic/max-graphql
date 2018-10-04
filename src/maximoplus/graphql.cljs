@@ -8,11 +8,14 @@
             [clojure.string :as s :refer [replace]]
             [maximoplus.net.node :refer [Node]]
             [maximoplus.graphql.processing :as pr]
+            [maximoplus.graphql.workflow :as w]
             [cognitect.transit :as transit]
             ["os-locale" :refer [sync]]
-)
+            )
   (:require-macros [maximoplus.macros :as mm :refer [def-comp googbase kk! kk-nocb! kk-branch-nocb! p-deferred p-deferred-on custom-this kc!]]
-                   [cljs.core.async.macros :refer [go]]))
+                   [cljs.core.async.macros :refer [go]]
+                   [maximoplus.graphql.processing :refer [prom prom->]]
+                   ))
 
 (n/set-net-type (Node.))
 
@@ -28,7 +31,7 @@
 (def transit-writer (transit/writer :json))
 
 (defn transit-write [x]
-  ;use transit to create json from clojurescript object
+                                        ;use transit to create json from clojurescript object
   (transit/write transit-writer x)
   )
 
@@ -159,8 +162,8 @@
     (send-process #js {:type "command"
                        :uid uid
                        :val (transit-write
-                               {:error-code error-code
-                                :error-text error-text})})))
+                             {:error-code error-code
+                              :error-text error-text})})))
 
 (defn process-fetch
   [uid args]
@@ -176,13 +179,13 @@
       (..
        fetch-prom
        (then
-         (fn [data]
-               (send-process #js{:type "command"
-                                 :uid uid
-                                 :val (transit-write
-                                       (conj
-                                        (normalize-data-bulk cont-id data)
-                                        cont-id))})))
+        (fn [data]
+          (send-process #js{:type "command"
+                            :uid uid
+                            :val (transit-write
+                                  (conj
+                                   (normalize-data-bulk cont-id data)
+                                   cont-id))})))
        (catch
            (fn [err]
              (process-command-error uid err)))))))
@@ -329,11 +332,11 @@
        (when-let [type (aget m "type")]
          (let [val (aget m "val")
                uid (aget m "uid")]
-        ;;   (.log js/console "processing pparent message")
-;;           (.log js/console (str "type=" type))
-  ;;         (.log js/console (str "value=" val))
-    ;;       (.log js/console m)
-      ;;     (.log js/console "++++++++++++++++++++++++")
+           ;;   (.log js/console "processing pparent message")
+           ;;           (.log js/console (str "type=" type))
+           ;;         (.log js/console (str "value=" val))
+           ;;       (.log js/console m)
+           ;;     (.log js/console "++++++++++++++++++++++++")
            (condp = type
              "kill" (do
                       (.log js/console "killing child process")

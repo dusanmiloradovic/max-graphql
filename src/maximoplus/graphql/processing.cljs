@@ -2,7 +2,7 @@
   (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer UniqueMboContainer SingleMboContainer]]
             [maximoplus.core :as c :refer [get-id get-fetched-row-data get-column-metadata]]
             [maximoplus.promises :as p])
-  (:require-macros [maximoplus.graphql.processing :refer [prom-> prom-then->]]))
+  (:require-macros [maximoplus.graphqlmacros :refer [prom-> prom-then->]]))
 
 (def registered-containers
   (atom {}))
