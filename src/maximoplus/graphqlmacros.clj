@@ -20,7 +20,7 @@
   [command-f & args]
   `(maximoplus.promises.get-promise
     (fn [resolve# reject#]
-      (~command-f @args
+      (~command-f ~args
        (fn [ok#]
          (resolve# ok#))
        (fn [err#]
