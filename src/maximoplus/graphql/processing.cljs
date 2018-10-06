@@ -355,7 +355,7 @@
   [app-container]
   (let [wf-action-set-id (b/get-next-unique-id)]
     (prom-then->
-     (prom-command!  c/route-wf (c/get-id app-container) (aget app-container "appname") (c/get-id app-container) wf-action-set-id)
+     (prom-command!  c/route-wf wf-action-set-id (c/get-id app-container) (aget app-container "appname") (c/get-id app-container) )
      (fn [res]
        (c/toggle-state app-container :wf-action-set wf-action-set-id)
        (process-wf-result res wf-action-set-id) ))))
