@@ -338,18 +338,24 @@
 
 (defn get-wf-director
   [app-container wf-process-name]
-  (if-not [contains? @wf-directors (c/get-id app-container)]
-    (.then 
-     (kk! app-container c/register-wf-director wf-process-name (c/get-id app-container))
-     (fn [_] (swap! wf-directors conj (c/get-id app-container))))
+  (println (c/get-id app-container) @wf-directors (contains? @wf-directors (c/get-id app-container)))
+  
+  (if-not (some #{(c/get-id app-container)} @wf-directors)
+    (js/Promise.
+     (fn [resolve reject]
+       (c/register-wf-director (c/get-id app-container) (b/get-app app-container) wf-process-name (c/get-id app-container)
+                               (fn [ok]
+                                 (swap! wf-directors conj (c/get-id app-container))
+                                 (resolve ok))
+                               (fn [err] (reject err)))))
     (.resolve js/Promise (c/get-id app-container))))
 
 ;;we pass the wf-action-set id to rooute function, and it returns handle to the input or complete-wf mboset
 (defn route-wf
   [app-container]
   (let [wf-action-set-id (b/get-next-unique-id)]
-    (.then
-     (kk! app-container c/route-wf (aget app-container "appname") (c/get-id app-container) wf-action-set-id)
+    (prom-then->
+     (prom-command!  c/route-wf (c/get-id app-container) (aget app-container "appname") (c/get-id app-container) wf-action-set-id)
      (fn [res]
        (c/toggle-state app-container :wf-action-set wf-action-set-id)
        (process-wf-result res wf-action-set-id) ))))
