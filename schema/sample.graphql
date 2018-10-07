@@ -216,9 +216,22 @@ type COMPLETEWF{
   instruction:String
   list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]
   memos(fromRow:Int, numRows:Int,_handle:String):[WFTRANSACTION]
-  
 }
 
+type INTERACTION{
+  nextapp:String
+  nexttab:String
+}
+
+union WFActionResult = INPUTWF | COMPLETEWF | Boolean | INTERACTION
+#
+#type WFResponse{
+#  responsetext:String
+#  messages:[String]
+#  result:WFActionResult
+#}
+
+#When we get boolean as result, it means the wf process has been finished
 #END WF types
 
 type Mutation{
