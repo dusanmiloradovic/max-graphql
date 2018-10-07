@@ -192,7 +192,34 @@ input POCHANGESTATUSInput{
   memo:String
   statdate:String
 }
+#WF types - will come as predefined, and automatically inclucdd
+type WFACTION{
+  actionid:Int
+  instruction:String
+}
 
+type WFTRANSACTION{
+  memo:String
+  personid:String
+  transdate:String
+}
+
+type INPUTWF{
+  actionid:Int
+  instruction:String
+  list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]
+}
+
+type COMPLETEWF{
+  taskdescripotion:String
+  actionid:Int
+  instruction:String
+  list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]
+  memos(fromRow:Int, numRows:Int,_handle:String):[WFTRANSACTION]
+  
+}
+
+#END WF types
 
 type Mutation{
 #  addPO(_handle:String,data:POInput):PO
