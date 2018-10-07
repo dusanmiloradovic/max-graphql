@@ -299,7 +299,8 @@
 
 (defn get-filtered-types
   []
-  (let [types (-> (get-ast-tree) (aget "__schema") (aget "types"))]
+  (let [ast-tree (get-ast-tree)
+        types (-> ast-tree (aget "__schema") (aget "types"))]
     (filter
      (fn [t]
        (and (= "OBJECT" (aget t "kind"))

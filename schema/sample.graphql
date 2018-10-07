@@ -223,13 +223,18 @@ type INTERACTION{
   nexttab:String
 }
 
-union WFActionResult = INPUTWF | COMPLETEWF | Boolean | INTERACTION
-#
-#type WFResponse{
-#  responsetext:String
-#  messages:[String]
-#  result:WFActionResult
-#}
+type WFFINISHED{
+  code:String
+}
+#Boolean would be enough, but union is possible only on object types
+
+union WFActionResult = INPUTWF | COMPLETEWF | WFFINISHED | INTERACTION
+
+type WFResponse{
+  responsetext:String
+  messages:[String]
+  result:WFActionResult
+}
 
 #When we get boolean as result, it means the wf process has been finished
 #END WF types
