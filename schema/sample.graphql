@@ -231,6 +231,7 @@ type WFFINISHED{
 union WFActionResult = INPUTWF | COMPLETEWF | WFFINISHED | INTERACTION
 
 type WFResponse{
+  title:String
   responsetext:String
   messages:[String]
   result:WFActionResult

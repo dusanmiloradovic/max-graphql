@@ -323,8 +323,32 @@
 ;;once the wf is finished it will be removed from here
 
 (defn process-wf-result
-  [[res _ _] wf-action-set]
-  (println res))
+  [[res _ _] app-container]
+  (let [actions (get res "actions")
+        next-action (get res "nextAction")
+        next-app (get res "nextApp")
+        at-interaction-node? (get res "atInteractionNode")
+        warnings (get res "warnings")
+        title (get res "title")
+        body (get res "body")
+        object-name (when-not (= "empty" actions) (get actions 1))
+        wf-finished? (and (= "empty" actions) (not at-interaction-node?))
+        rez {:title title
+             :responsetext body
+             :messages warnings
+             }]
+    (if (at-interaction-node?)
+      (if (= "ROUTEWF" next-action)
+        (route-wf app-container)
+        (assoc rez :result {:nextapp next-app
+                            :nexttab next-tab}))
+      (if wf-finished?
+        (assoc rez :result {:code body})
+        ;;TODO PROCESS rezult with new type of the container (don't forget to translate to graphql types!!!
+        )
+      
+      )
+    ))
 
 ;;when processing the callback of the workflow action, we will get (refer to the basecontriols workflow command container which we don;t use here)
 ;;the warnnings, title, information has the workflow been finished, or in the case it is interaction node, the interaction data( which app, tab, etc)
@@ -358,7 +382,7 @@
      (prom-command!  c/route-wf wf-action-set-id (c/get-id app-container) (aget app-container "appname") (c/get-id app-container) )
      (fn [res]
        (c/toggle-state app-container :wf-action-set wf-action-set-id)
-       (process-wf-result res wf-action-set-id) ))))
+       (process-wf-result res app-container) ))))
 
 (defn choose-wf-action
   [app-container action-id memo]
