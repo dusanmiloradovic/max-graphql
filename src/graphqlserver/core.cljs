@@ -552,21 +552,31 @@
     (= type "Mutation") (get-mutation-resolver type field return-type)
     :else (get-query-resolver type field return-type)))
 
+;;workflow operations return union. Object returned from the process
+;;shoukld have the type attribute to resolve on type
+(def union-type-resolvers
+  {:WFResponse
+   {"__resolveType"
+    (fn   [obj context info]
+      (aget obj "type"))}})
+
 (defn get-auto-resolvers
   ;;for the time being, just for the queries
   []
   (clj->js
-   (reduce
-    (fn[m v]
-      (if (empty? (:fields v))
-        m
-        (assoc m (:name v)
-               (reduce (fn[mm vv]
-                         (assoc mm (:name vv)
-                                (get-resolver-function (:name v) (:name vv) (:type vv))
-                                ;;[(:name v) (:name vv) (:type vv)]
-                                )) {}  (:fields v))))) {}
-    (get-function-type-signatures))))
+   (merge
+    (reduce
+     (fn[m v]
+       (if (empty? (:fields v))
+         m
+         (assoc m (:name v)
+                (reduce (fn[mm vv]
+                          (assoc mm (:name vv)
+                                 (get-resolver-function (:name v) (:name vv) (:type vv))
+                                 ;;[(:name v) (:name vv) (:type vv)]
+                                 )) {}  (:fields v))))) {}
+     (get-function-type-signatures))
+    union-type-resolvers)))
 
 (defn ^:dev/before-load stop []
   (js/console.log "stop")
