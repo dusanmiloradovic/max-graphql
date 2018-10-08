@@ -262,6 +262,7 @@ type Mutation{
   deletePOLINE(_handle:String,id:ID):Boolean
   updatePOCHANGESTATUS(_handle:String,id:ID,data:POCHANGESTATUSInput):POCHANGESTATUS
   commandPOCHANGESTATUS(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
+  routeWF(_handle:String, processName:String):WFResponse
   save:Boolean
   rollback:Boolean
 }
