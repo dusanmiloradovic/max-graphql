@@ -7,7 +7,7 @@
             [cljs.core.async :as a :refer [<!]]
             [clojure.string :as s :refer [replace]]
             [maximoplus.net.node :refer [Node]]
-            [maximoplus.graphql.processing :as pr]
+            [maximoplus.graphql.processing :as pr :refer [normalize-data-object normalize-data-bulk]
             [cognitect.transit :as transit]
             ["os-locale" :refer [sync]]
             )
@@ -35,19 +35,6 @@
 
 (def os-locale (sync))
 
-(def thousands-sep-symbol
-  (let [smpl (.toLocaleString 1111)]
-    (aget smpl 1)))
-
-(def comma-symbol
-  (if (= thousands-sep-symbol ".") "," "."))
-
-(def thousands-sep-regex
-  (js/RegExp. (str "/" thousands-sep-symbol "/g")))
-
-(defn number-from-string
-  [num]
-  (replace num thousands-sep-symbol ""))
 
 (defn send-process
   [message]
@@ -99,40 +86,7 @@
 ;;                                      (.loj js/console err)))))
 ;;global login function should hot be required.
 
-(defn normalize-column
-  [container-id column-name val]
-  ;;transorms maximo data to graphql data, right now only floats are affected
-  ;;no option to chose, decimal from maximo will be always float in GraphQL
-  (if-let [column-meta (c/get-column-metadata container-id column-name)]
-    (let [numeric? (:numeric column-meta)
-          max-type (:maxType column-meta)
-          decimal? (or
-                    (= "AMOUNT" max-type)
-                    (= "FLOAT" max-type)
-                    (= "DECIMAL" max-type))
-          integer? (or
-                    (= "SMALLINT" max-type)
-                    (= "BIGINT" max-type)
-                    (= "INTEGER" max-type))]
-      (if-not numeric?;;still no support for dates
-        val
-        (if decimal?
-          (js/parseFloat (number-from-string val))
-          (js/parseInt (number-from-string val)))))
-    val))
 
-(defn normalize-data-object
-  [container-id val]
-  (reduce-kv (fn [m k v]
-               (assoc m k (normalize-column container-id k v))
-               )
-             {} val))
-
-(defn normalize-data-bulk
-  [container-id data]
-  (map (fn [[rownum data flags]]
-         [rownum (normalize-data-object container-id data) flags])
-       data))
 
 (defn get-container
   [args]

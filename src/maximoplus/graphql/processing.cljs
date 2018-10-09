@@ -1,9 +1,68 @@
 (ns maximoplus.graphql.processing
   (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer UniqueMboContainer SingleMboContainer]]
             [maximoplus.core :as c :refer [get-id get-fetched-row-data get-column-metadata]]
-            [maximoplus.promises :as p])
+            [maximoplus.promises :as p]
+            [maximoplus.graphql.components :refer [AttachToExisting]])
+  
   (:require-macros [maximoplus.graphqlmacros :refer [prom-> prom-then-> prom-command!]]
                    [maximoplus.macros :refer [kk!]]))
+
+(def thousands-sep-symbol
+  (let [smpl (.toLocaleString 1111)]
+    (aget smpl 1)))
+
+(def comma-symbol
+  (if (= thousands-sep-symbol ".") "," "."))
+
+(def thousands-sep-regex
+  (js/RegExp. (str "/" thousands-sep-symbol "/g")))
+
+(defn number-from-string
+  [num]
+  (replace num thousands-sep-symbol ""))
+
+(defn normalize-column
+  [container-id column-name val]
+  ;;transorms maximo data to graphql data, right now only floats are affected
+  ;;no option to chose, decimal from maximo will be always float in GraphQL
+  (if-let [column-meta (c/get-column-metadata container-id column-name)]
+    (let [numeric? (:numeric column-meta)
+          max-type (:maxType column-meta)
+          decimal? (or
+                    (= "AMOUNT" max-type)
+                    (= "FLOAT" max-type)
+                    (= "DECIMAL" max-type))
+          integer? (or
+                    (= "SMALLINT" max-type)
+                    (= "BIGINT" max-type)
+                    (= "INTEGER" max-type))]
+      (if-not numeric?;;still no support for dates
+        val
+        (if decimal?
+          (js/parseFloat (number-from-string val))
+          (js/parseInt (number-from-string val)))))
+    val))
+
+(defn normalize-data-object
+  [container-id val]
+  (reduce-kv (fn [m k v]
+               (assoc m k (normalize-column container-id k v))
+               )
+             {} val))
+
+(defn normalize-data-bulk
+  [container-id data]
+  (map (fn [[rownum data flags]]
+         [rownum (normalize-data-object container-id data) flags])
+       data))
+
+(defn normalize-first-data-object
+  [container-id data]
+  (->
+   (normalize-data-bulk container-id data)
+   (nth 0);;first row in collection
+   (nth 1);;just data (full is [rownum data flags]
+   ))
 
 (def registered-containers
   (atom {}))
@@ -322,6 +381,11 @@
 ;;here I will register each wf-director with the same name as application container. The logic is that you can run only one worklfow on mbo at the time.
 ;;once the wf is finished it will be removed from here
 
+(def action-set-fields
+  {"COMPLETEWF" ["taskdescription" "actionid" "memo"]
+   "INPUTWF" ["assignee" "memo"]
+   "REASSIGNWF" ["assignee" "memo"]})
+
 (defn process-wf-result
   [[res _ _] app-container]
   (let [actions (get res "actions")
@@ -344,11 +408,20 @@
                             :nexttab next-tab}))
       (if wf-finished?
         (assoc rez :result {:code body})
-        ;;TODO PROCESS rezult with new type of the container (don't forget to translate to graphql types!!!
-        )
-      
-      )
-    ))
+        (let [action-set-id (get-state app-container :wf-action-set)
+              action-set-cont (AttachToExisting. action-set-id)
+              cols (action-set-fields object-name)
+              metadata (get-metadata action-set-cont cols)
+              data (fetch-data action-set-id cols 0 100 {});;action set is the mbo set with the workfow actions given at some point. it is very unlikely that it will be more than 10 of them, i put 100 as comfortable limit
+              ]
+          (.then
+           (.all js/Promise #js[data metadata])
+           (fn [[data metadata]]
+             (let [ndata (assoc
+                          (normalize-first-data-object action-set-id data)
+;;                          "_metadata" (transform-metadata)
+                          "_handle" action-set-id)]
+               (assoc rez "result" ndata)))))))))
 
 ;;when processing the callback of the workflow action, we will get (refer to the basecontriols workflow command container which we don;t use here)
 ;;the warnnings, title, information has the workflow been finished, or in the case it is interaction node, the interaction data( which app, tab, etc)
