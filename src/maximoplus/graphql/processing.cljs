@@ -411,12 +411,13 @@
         (let [action-set-id (get-state app-container :wf-action-set)
               action-set-cont (AttachToExisting. action-set-id)
               cols (action-set-fields object-name)
-              metadata (get-metadata action-set-cont cols)
+            ;;  metadata (get-metadata action-set-cont cols)
               data (fetch-data action-set-id cols 0 100 {});;action set is the mbo set with the workfow actions given at some point. it is very unlikely that it will be more than 10 of them, i put 100 as comfortable limit
               ]
           (.then
-           (.all js/Promise #js[data metadata])
-           (fn [[data metadata]]
+           ;;           (.all js/Promise #js[data metadata])
+           data
+           (fn [data]
              (let [ndata (assoc
                           (normalize-first-data-object action-set-id data)
 ;;                          "_metadata" (transform-metadata)
