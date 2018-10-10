@@ -405,7 +405,7 @@
              :responsetext body
              :messages warnings
              }]
-    (if (at-interaction-node?)
+    (if at-interaction-node?
       (if (= "ROUTEWF" next-action)
         (route-wf app-container)
         (assoc rez :result {:nextapp next-app
@@ -414,6 +414,7 @@
         (assoc rez :result {:code body})
         (let [action-set-id (c/get-state app-container :wf-action-set)
               action-set-cont (AttachToExisting. action-set-id)
+              _ (swap! registered-containers assoc action-set-id action-set-cont)
               cols (action-set-fields object-name)
             ;;  metadata (get-metadata action-set-cont cols)
               data (fetch-data action-set-id cols 0 100 {});;action set is the mbo set with the workfow actions given at some point. it is very unlikely that it will be more than 10 of them, i put 100 as comfortable limit
@@ -459,6 +460,7 @@
     (prom-then->
      (prom-command!  c/route-wf wf-action-set-id (c/get-id app-container) (aget app-container "appname") (c/get-id app-container) )
      (fn [res]
+       (println res)
        (c/toggle-state app-container :wf-action-set wf-action-set-id)
        (process-wf-result res app-container) ))))
 
