@@ -1,6 +1,7 @@
 (ns maximoplus.graphql.processing
   (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer UniqueMboContainer SingleMboContainer]]
             [maximoplus.core :as c :refer [get-id get-fetched-row-data get-column-metadata]]
+            [clojure.string :as s :refer [replace]]
             [maximoplus.promises :as p]
             [maximoplus.graphql.components :refer [AttachToExisting]])
   
@@ -386,11 +387,14 @@
    "INPUTWF" ["assignee" "memo"]
    "REASSIGNWF" ["assignee" "memo"]})
 
+(declare route-wf)
+
 (defn process-wf-result
   [[res _ _] app-container]
   (let [actions (get res "actions")
         next-action (get res "nextAction")
         next-app (get res "nextApp")
+        next-tab (get res "nextTab")
         at-interaction-node? (get res "atInteractionNode")
         warnings (get res "warnings")
         title (get res "title")
@@ -408,7 +412,7 @@
                             :nexttab next-tab}))
       (if wf-finished?
         (assoc rez :result {:code body})
-        (let [action-set-id (get-state app-container :wf-action-set)
+        (let [action-set-id (c/get-state app-container :wf-action-set)
               action-set-cont (AttachToExisting. action-set-id)
               cols (action-set-fields object-name)
             ;;  metadata (get-metadata action-set-cont cols)

@@ -7,7 +7,7 @@
             [cljs.core.async :as a :refer [<!]]
             [clojure.string :as s :refer [replace]]
             [maximoplus.net.node :refer [Node]]
-            [maximoplus.graphql.processing :as pr :refer [normalize-data-object normalize-data-bulk]
+            [maximoplus.graphql.processing :as pr :refer [normalize-data-object normalize-data-bulk]]
             [cognitect.transit :as transit]
             ["os-locale" :refer [sync]]
             )
