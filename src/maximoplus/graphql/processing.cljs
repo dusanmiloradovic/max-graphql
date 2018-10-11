@@ -403,6 +403,11 @@
         body (get res "body")
         object-name (when-not (= "empty" actions) (get actions 1))
         wf-finished? (and (= "empty" actions) (not at-interaction-node?))
+        type (if wf-finished?
+               "WFFINISHED"
+               (if at-interation-node?
+                 "INTERACTION"
+                 object-name))
         rez {:title title
              :responsetext body
              :messages warnings
@@ -411,9 +416,11 @@
       (if (= "ROUTEWF" next-action)
         (route-wf app-container)
         (assoc rez :result {:nextapp next-app
-                            :nexttab next-tab}))
+                            :nexttab next-tab
+                            :type type}))
       (if wf-finished?
-        (assoc rez :result {:code body})
+        (assoc rez :result {:code body
+                            :type type})
         (let [action-set-id (c/get-state app-container :wf-action-set)
               action-set-cont (AttachToExisting. action-set-id)
               _ (swap! registered-containers assoc action-set-id action-set-cont)
@@ -428,7 +435,8 @@
              (let [ndata (assoc
                           (normalize-first-data-object action-set-id data)
 ;;                          "_metadata" (transform-metadata)
-                          "_handle" action-set-id)]
+                          "_handle" action-set-id
+                          :type type)]
                (assoc rez "result" ndata)))))))))
 
 ;;when processing the callback of the workflow action, we will get (refer to the basecontriols workflow command container which we don;t use here)

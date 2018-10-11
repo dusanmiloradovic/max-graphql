@@ -63,6 +63,7 @@
 
 (defn process-data-one-row
   [[component-id data flags]]
+  (println "process-data-one row " data)
   (clj->js
    (into {}
          (conj
@@ -535,9 +536,10 @@
           pid (aget context "pid")]
       (.then
        (send-graphql-command pid #js{:command "routeWF"
-                                     :handle handle
-                                     :processName process-name})
-       process-data-one-row))))
+                                     :args #js{:handle handle
+                                               :processName process-name}})
+       (fn [wf-data]
+         wf-data)))))
 
 (defn get-mutation-resolver
   [type field return-type]
@@ -548,6 +550,7 @@
       (.startsWith field "command") (get-command-mutation-resolver field return-type)
       (= field "save") (get-save-mutation-resolver)
       (= field "rollback") (get-rollback-mutation-resolver)
+      (= field "routeWF") (get-routewf-mutation-resolver)
       :else (fn [x] x)))
 
 (defn get-query-resolver
@@ -568,7 +571,7 @@
 ;;workflow operations return union. Object returned from the process
 ;;shoukld have the type attribute to resolve on type
 (def union-type-resolvers
-  {:WFResponse
+  {:WFActionResult
    {"__resolveType"
     (fn   [obj context info]
       (aget obj "type"))}})
