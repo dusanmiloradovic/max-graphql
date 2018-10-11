@@ -263,6 +263,21 @@
            (println "zasto " err)
            (process-command-error uid err))))))
 
+(defn process-route-wf
+  [uid args]
+  (let [container-id (aget args "handle")
+        process-name (aget args "processName")]
+    (..
+     (pr/do-route-wf container-id process-name)
+     (then
+      (fn [res]
+        (send-process #js {:type "command"
+                           :uid uid
+                           :val (transit-write res)})))
+     (catch
+         (fn [err]
+           (process-command-error uid err))))))
+
 
 (defn process-command
   [uid val]
@@ -275,6 +290,7 @@
       "delete" (process-delete uid args)
       "metadata" (process-metadata uid args)
       "save" (process-save uid)
+      "routeWF" (process-route-wf uid args)
       "rollback" (process-rollback uid)
       "execute" (process-execute uid args)
       :default)))

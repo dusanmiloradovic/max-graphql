@@ -441,8 +441,6 @@
 
 (defn get-wf-director
   [app-container wf-process-name]
-  (println (c/get-id app-container) @wf-directors (contains? @wf-directors (c/get-id app-container)))
-  
   (if-not (some #{(c/get-id app-container)} @wf-directors)
     (js/Promise.
      (fn [resolve reject]
@@ -460,9 +458,17 @@
     (prom-then->
      (prom-command!  c/route-wf wf-action-set-id (c/get-id app-container) (aget app-container "appname") (c/get-id app-container) )
      (fn [res]
-       (println res)
        (c/toggle-state app-container :wf-action-set wf-action-set-id)
        (process-wf-result res app-container) ))))
+
+(defn do-route-wf
+  [app-container-id wf-process-name]
+  (let [app-container (@registered-containers app-container-id)]
+    (if (and app-container (b/get-app app-container))
+      (prom->
+       (get-wf-director app-container wf-process-name)
+       (route-wf app-container))
+      (.reject js/Promise [[:js (js/Error. "Not an application handle")] 6 nil]))))
 
 (defn choose-wf-action
   [app-container action-id memo]

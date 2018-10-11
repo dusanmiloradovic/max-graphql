@@ -5,7 +5,9 @@
 type Query {
   #  books: [Book]
   # book(author:String): Book
-   po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+  po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+  pr(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[PRSTD]
+#  pr(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[PR]
 #  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
 }
 
@@ -35,6 +37,54 @@ input POSTDInput{
   status:String
   orderdate:String #TODO this should be GraphQL date (external package)
   _handle:String
+}
+
+type PRSTD{
+  id:ID
+  prnum:String
+  description:String
+  vendor:String
+  status:String
+  _handle:String
+  list_vendor(fromRow:Int,numRows:Int, _handle:String, qbe:COMPANIESQBE):[COMPANIES]
+
+}
+
+input PRSTDQBE{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+  vendor:String
+}
+
+type PR{
+  id:ID
+  prnum:String
+  description:String
+  vendor:String
+  status:String
+  _handle:String
+  list_vendor(fromRow:Int,numRows:Int, _handle:String, qbe:COMPANIESQBE):[COMPANIES]
+
+}
+
+input PRQBE{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+  vendor:String
+}
+
+type COMPANIES{
+  company:String
+  name:String
+}
+
+input COMPANIESQBE{
+  company:String
+  name:String
 }
 
 type ColumnMetadata{

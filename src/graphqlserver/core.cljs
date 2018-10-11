@@ -526,6 +526,18 @@
        (send-graphql-command pid #js{:command "rollback"})
        (fn [_] true)))))
 
+(defn get-routewf-mutation-resolver
+  []
+  (fn [obj args context info]
+    (let [handle (aget args "_handle")
+          process-name (aget args "processName")
+          pid (aget context "pid")]
+      (.then
+       (send-graphql-command pid #js{:command "routeWF"
+                                     :handle handle
+                                     :processName process-name})
+       process-data-one-row))))
+
 (defn get-mutation-resolver
   [type field return-type]
   (cond
