@@ -261,7 +261,7 @@ type INPUTWF{
 }
 
 type COMPLETEWF{
-  taskdescripotion:String
+  taskdescription:String
   actionid:Int
   instruction:String
   list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]

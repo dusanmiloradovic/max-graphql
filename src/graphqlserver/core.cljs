@@ -321,6 +321,7 @@
 
 (defn get-scalar-fields
   [gql-type]
+  (println "getting the scalar fields for " gql-type)
   (filter #(= (:type %) :scalar)
           (map get-field-data
                (aget
@@ -423,7 +424,7 @@
           rel-name field
           pid (aget context "pid")
           qbe (aget args "qbe")
-          _ (.log js.console (str "calling the poline resolver for parent id " parent-id ))
+          _ (.log js.console (str "calling the rel resolver for parent id " parent-id  " and rel-name " rel-name))
           command-object #js{:command "fetch"
                              :args #js{:relationship rel-name
                                        :columns (get-maximo-scalar-fields return-type)
@@ -539,7 +540,7 @@
                                      :args #js{:handle handle
                                                :processName process-name}})
        (fn [wf-data]
-         wf-data)))))
+         (clj->js wf-data))))))
 
 (defn get-mutation-resolver
   [type field return-type]

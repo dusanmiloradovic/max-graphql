@@ -1,7 +1,7 @@
 (ns maximoplus.graphql.processing
   (:require [maximoplus.basecontrols :as b :refer [MboContainer AppContainer RelContainer ListContainer UniqueMboAppContainer UniqueMboContainer SingleMboContainer]]
             [maximoplus.core :as c :refer [get-id get-fetched-row-data get-column-metadata]]
-            [clojure.string :as s :refer [replace]]
+            [clojure.string :as s :refer [replace lower-case]]
             [maximoplus.promises :as p]
             [maximoplus.graphql.components :refer [AttachToExisting]])
   
@@ -59,11 +59,16 @@
 
 (defn normalize-first-data-object
   [container-id data]
-  (->
-   (normalize-data-bulk container-id data)
-   (nth 0);;first row in collection
-   (nth 1);;just data (full is [rownum data flags]
-   ))
+  (let [dta (->
+             (normalize-data-bulk container-id data)
+             (nth 0);;first row in collection
+             (nth 1);;just data (full is [rownum data flags]
+             )]
+    (into {}
+     (map (fn [[k v]]
+            [(lower-case k) v]
+            )
+          dta))))
 
 (def registered-containers
   (atom {}))
@@ -405,7 +410,7 @@
         wf-finished? (and (= "empty" actions) (not at-interaction-node?))
         type (if wf-finished?
                "WFFINISHED"
-               (if at-interation-node?
+               (if at-interaction-node?
                  "INTERACTION"
                  object-name))
         rez {:title title
@@ -432,11 +437,12 @@
            ;;           (.all js/Promise #js[data metadata])
            data
            (fn [data]
-             (let [ndata (assoc
-                          (normalize-first-data-object action-set-id data)
-;;                          "_metadata" (transform-metadata)
+             (let [nordata (normalize-first-data-object action-set-id data)
+                   ndata (assoc
+                          nordata
                           "_handle" action-set-id
-                          :type type)]
+                          :type type)
+                   ]
                (assoc rez "result" ndata)))))))))
 
 ;;when processing the callback of the workflow action, we will get (refer to the basecontriols workflow command container which we don;t use here)
