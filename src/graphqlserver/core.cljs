@@ -385,6 +385,7 @@
                 )]
      (.then res-p process-data-rows))))
 
+;;TODO for all the resolver function, have strict validation, or it will fail
 (defn get-list-domain-resolver-function
   [type field return-type]
   (fn  [obj args context info]
@@ -396,7 +397,7 @@
           pid (aget context "pid")
           qbe (aget args "qbe")
           command-object #js{:command "fetch"
-                             :args #js{:list-column (aget (.split field "-") 1)
+                             :args #js{:list-column (aget (.split field "_") 1)
                                        :columns (get-maximo-scalar-fields return-type)
                                        :parent-handle parent-handle 
                                        :parent-id (aget obj "id")

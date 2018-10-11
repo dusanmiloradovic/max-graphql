@@ -123,6 +123,7 @@
 
 (defn register-rel-container
   [parent-id parent-handle rel-name ]
+  (println "registering rel contanier " parent-id " and " parent-handle " and " rel-name)
   (let [parent-cont (@registered-containers parent-handle)
         u (SingleMboContainer. parent-cont parent-id)
         r (RelContainer. u rel-name)]
@@ -131,6 +132,7 @@
 
 (defn register-list-container
   [parent-id parent-object-name column-name]
+  (println "registering list contanier " parent-id " and " parent-object-name " and " column-name)
   (let [u (UniqueMboContainer. parent-object-name parent-id)
         r (ListContainer. u column-name)]
     (swap! registered-containers assoc (get-id r) r)
