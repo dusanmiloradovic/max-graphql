@@ -529,3 +529,80 @@
      (prom-command! c/execute-reassign-wf reassign-set-id (c/get-id app-container) ))
     (throw  (js/Error. "Invalid reassign set id"))))
 
+
+
+;;ADMIN PART - fot the admin application
+(defn get-apps
+  []
+  (let [apps (MboContainer. "maxapps")
+        data (fetch-data (c/get-id apps) ["app" "description" "maintbname"] 0 1000 {})]
+    (.then data
+           (fn [data]
+             (normalize-data-bulk (c/get-id apps) data)))))
+
+(defn get-relationship
+  [mbo-name]
+  (let [rels (MboCotnainer.  "maxrelationship")]
+    (.then
+     (fetch-data (c/get-id rels) ["name" "child" "whereclause"] 0 1000 {"parent" (str "=" mbo-name)} )
+     (fn [data]
+       (normalize-data-bulk (c/get-id apps) data)))))
+
+(defn get-all-mbo-objects
+  []
+  ;;this will be used when picking the list. In general, the list will be available when the domain exist in the maxattribute table or the class returns the value. When there is no class, we can guess the return object type (required for graphql) based on the domain. If there is a field class, user will have to pick the return type himself
+  (let [mbos (MboContainer. "maxobject")
+        data (fetch-data (c/get-id mbos) ["object" "description"] 0 1000 {})]
+    (.then data
+           (fn [data]
+             (normalize-data-bulk (c/get-id apps) data)))))
+
+(defn get-attributes
+  [mbo-name]
+  ;;user will pick which attributes will be in the graphql. Same attributes will be shared for input inputqbe and regular query types (with the exclusion of non-persistent for the qbeinput).
+  (let [attributes (MboContainer. "maxattribute")
+        data (fetch-data (c/get-id attributes) ["attributename" "classname" "domainid" "maxtype" "title" "remarks" "persistent"] 0 1000)]
+    (.then data
+           (fn [data]
+             (normalize-data-bulk (c/get-id apps) data)))))
+
+(defn get-source-of-table-domain
+  [domaini-id]
+  (let [tdo (MboContainer. "maxtabledomain")
+        tdo-data (fetch-data (c/get-id tdo) ["objectname"] 0 1 {"domainid" (str "=" domain-id)})]
+    (.then
+     tdo-data
+     (fn [data]
+       (get
+        (normalize-first-data-object (c/get-id tdo) data)
+        "objectname")))))
+
+(defn guess-domain-return-type
+  [mboname attribute-name]
+  ;;this will be used for list fields in queries, 
+  (let [attrs (MboContainer. "maxattribute")
+        data (fetch-data (c/get-id attrs) ["attributename" "classname" "domainid"] 0 1 {"objectname" (str "=" mboname) "attributename" (str "=" attribute-name)})]
+    (.then
+     data
+     (fn [data]
+       (let [nd (normalize-first-data-object (c/get-id attrs) data)
+             class-name (get nd "classname")
+             domain-id (get nd "domainid")]
+         (if-not (or class-name domain-id)
+           :noreturntype
+           (if class-name
+             :needmanualchoosing;;we can't guess attribute has a class
+             (let [domain-cont (MboContainer. "maxdomain")
+                   domain-data (fetch-data (c/get-id domain-cont) ["domaintype"] 0 1 {"domainid" (str "=" domain-id)})]
+               (.then
+                domain-data
+                (fn [data]
+                  (let [nd (normalize-first-data-object (c/get-id domain-cont) data)
+                        type (get nd "domaintype")]
+                    (condp = type
+                      "ALN" "ALNDOMAIN"
+                      "SYNONYM" "SYNONYMDOMAIN"
+                      "NUMERIC" "NUMERICDOMAIN"
+                      "NUMERICRANGE" "NUMERICRANGEDOMAIN"
+                      "CROSSOVER" (get-source-of-table-domain domain-id)
+                      "TABLE" (get-source-of-table-domain domain-id)))))))))))))
