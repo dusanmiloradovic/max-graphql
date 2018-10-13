@@ -555,7 +555,7 @@
   ;;this will be used when picking the list. In general, the list will be available when the domain exist in the maxattribute table or the class returns the value. When there is no class, we can guess the return object type (required for graphql) based on the domain. If there is a field class, user will have to pick the return type himself
   (let [mbos (MboContainer. "maxobject")
         _ (swap! registered-containers assoc (c/get-id mbos) mbos )
-        data (fetch-data (c/get-id mbos) ["object" "description"] 0 1000 {})]
+        data (fetch-data (c/get-id mbos) ["objectname" "description"] 0 1000 {})]
     (.then data
            (fn [data]
              (normalize-data-bulk (c/get-id mbos) data)))))
@@ -594,9 +594,9 @@
        (let [nd (normalize-first-data-object (c/get-id attrs) data)
              class-name (get nd "classname")
              domain-id (get nd "domainid")]
-         (if-not (or class-name domain-id)
+         (if (and (empty? class-name) (empty? domain-id))
            :noreturntype
-           (if class-name
+           (if-not (empty? class-name)
              :needmanualchoosing;;we can't guess attribute has a class
              (let [domain-cont (MboContainer. "maxdomain")
                    _ (swap! registered-containers assoc (c/get-id domain-cont) domain-cont )
