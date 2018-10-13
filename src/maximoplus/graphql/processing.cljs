@@ -542,11 +542,11 @@
 
 (defn get-relationship
   [mbo-name]
-  (let [rels (MboCotnainer.  "maxrelationship")]
+  (let [rels (MboContainer.  "maxrelationship")]
     (.then
      (fetch-data (c/get-id rels) ["name" "child" "whereclause"] 0 1000 {"parent" (str "=" mbo-name)} )
      (fn [data]
-       (normalize-data-bulk (c/get-id apps) data)))))
+       (normalize-data-bulk (c/get-id rels) data)))))
 
 (defn get-all-mbo-objects
   []
@@ -555,19 +555,19 @@
         data (fetch-data (c/get-id mbos) ["object" "description"] 0 1000 {})]
     (.then data
            (fn [data]
-             (normalize-data-bulk (c/get-id apps) data)))))
+             (normalize-data-bulk (c/get-id mbos) data)))))
 
 (defn get-attributes
   [mbo-name]
   ;;user will pick which attributes will be in the graphql. Same attributes will be shared for input inputqbe and regular query types (with the exclusion of non-persistent for the qbeinput).
   (let [attributes (MboContainer. "maxattribute")
-        data (fetch-data (c/get-id attributes) ["attributename" "classname" "domainid" "maxtype" "title" "remarks" "persistent"] 0 1000)]
+        data (fetch-data (c/get-id attributes) ["attributename" "classname" "domainid" "maxtype" "title" "remarks" "persistent"] 0 1000 {"objectname" (str "=" mbo-name)})]
     (.then data
            (fn [data]
-             (normalize-data-bulk (c/get-id apps) data)))))
+             (normalize-data-bulk (c/get-id attributes) data)))))
 
 (defn get-source-of-table-domain
-  [domaini-id]
+  [domain-id]
   (let [tdo (MboContainer. "maxtabledomain")
         tdo-data (fetch-data (c/get-id tdo) ["objectname"] 0 1 {"domainid" (str "=" domain-id)})]
     (.then
