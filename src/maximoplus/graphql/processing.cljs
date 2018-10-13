@@ -535,14 +535,16 @@
 (defn get-apps
   []
   (let [apps (MboContainer. "maxapps")
+        _ (swap! registered-containers assoc (c/get-id apps) apps )
         data (fetch-data (c/get-id apps) ["app" "description" "maintbname"] 0 1000 {})]
     (.then data
            (fn [data]
              (normalize-data-bulk (c/get-id apps) data)))))
 
-(defn get-relationship
+(defn get-relationships
   [mbo-name]
-  (let [rels (MboContainer.  "maxrelationship")]
+  (let [rels (MboContainer.  "maxrelationship")
+        _ (swap! registered-containers assoc (c/get-id rels) rels )]
     (.then
      (fetch-data (c/get-id rels) ["name" "child" "whereclause"] 0 1000 {"parent" (str "=" mbo-name)} )
      (fn [data]
@@ -552,6 +554,7 @@
   []
   ;;this will be used when picking the list. In general, the list will be available when the domain exist in the maxattribute table or the class returns the value. When there is no class, we can guess the return object type (required for graphql) based on the domain. If there is a field class, user will have to pick the return type himself
   (let [mbos (MboContainer. "maxobject")
+        _ (swap! registered-containers assoc (c/get-id mbos) mbos )
         data (fetch-data (c/get-id mbos) ["object" "description"] 0 1000 {})]
     (.then data
            (fn [data]
@@ -561,6 +564,7 @@
   [mbo-name]
   ;;user will pick which attributes will be in the graphql. Same attributes will be shared for input inputqbe and regular query types (with the exclusion of non-persistent for the qbeinput).
   (let [attributes (MboContainer. "maxattribute")
+        _ (swap! registered-containers assoc (c/get-id attributes) attributes )
         data (fetch-data (c/get-id attributes) ["attributename" "classname" "domainid" "maxtype" "title" "remarks" "persistent"] 0 1000 {"objectname" (str "=" mbo-name)})]
     (.then data
            (fn [data]
@@ -569,6 +573,7 @@
 (defn get-source-of-table-domain
   [domain-id]
   (let [tdo (MboContainer. "maxtabledomain")
+        _ (swap! registered-containers assoc (c/get-id tdo) tdo )
         tdo-data (fetch-data (c/get-id tdo) ["objectname"] 0 1 {"domainid" (str "=" domain-id)})]
     (.then
      tdo-data
@@ -581,6 +586,7 @@
   [mboname attribute-name]
   ;;this will be used for list fields in queries, 
   (let [attrs (MboContainer. "maxattribute")
+        _ (swap! registered-containers assoc (c/get-id attrs) attrs )
         data (fetch-data (c/get-id attrs) ["attributename" "classname" "domainid"] 0 1 {"objectname" (str "=" mboname) "attributename" (str "=" attribute-name)})]
     (.then
      data
@@ -593,6 +599,7 @@
            (if class-name
              :needmanualchoosing;;we can't guess attribute has a class
              (let [domain-cont (MboContainer. "maxdomain")
+                   _ (swap! registered-containers assoc (c/get-id domain-cont) domain-cont )
                    domain-data (fetch-data (c/get-id domain-cont) ["domaintype"] 0 1 {"domainid" (str "=" domain-id)})]
                (.then
                 domain-data
