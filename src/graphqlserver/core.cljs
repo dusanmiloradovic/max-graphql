@@ -542,6 +542,22 @@
        (fn [wf-data]
          (clj->js wf-data))))))
 
+(defn get-choosewf-mutation-resolver
+  []
+  (fn [obj args context info]
+    (let [handle (aget args "_handle")
+          action-id (aget args "actionid")
+          memo (aget args "memo")
+          pid (aget context "pid")]
+      (.then
+       (send-graphql-command pid #js{:command "chooseWFAction"
+                                     :args #js{:handle handle
+                                               :actionid action-id
+                                               :memo memo
+                                               }})
+       (fn [wf-data]
+         (clj->js wf-data))))))
+
 (defn get-mutation-resolver
   [type field return-type]
   (cond
@@ -552,6 +568,7 @@
       (= field "save") (get-save-mutation-resolver)
       (= field "rollback") (get-rollback-mutation-resolver)
       (= field "routeWF") (get-routewf-mutation-resolver)
+      (= field "chooseWFAction" (get-choosewf-mutation-resolver))
       :else (fn [x] x)))
 
 (defn get-query-resolver

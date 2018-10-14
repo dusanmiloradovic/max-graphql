@@ -278,6 +278,21 @@
          (fn [err]
            (process-command-error uid err))))))
 
+(defn process-choose-wf-action
+  [uid args]
+  (let [container-id (aget args "handle")
+        action-id (aget args "actionid")
+        memo (aget args "memo")]
+    (..
+     (pr/choose-wf-action container-id action-id memo)
+     (then
+      (fn [res]
+        (send-process #js {:type "command"
+                           :uid uid
+                           :val (transit-write res)})))
+     (catch
+         (fn [err]
+           (process-command-error uid err))))))
 
 (defn process-command
   [uid val]
@@ -291,6 +306,7 @@
       "metadata" (process-metadata uid args)
       "save" (process-save uid)
       "routeWF" (process-route-wf uid args)
+      "chooseWFAction" (process-choose-wf-action uid args)
       "rollback" (process-rollback uid)
       "execute" (process-execute uid args)
       :default)))
