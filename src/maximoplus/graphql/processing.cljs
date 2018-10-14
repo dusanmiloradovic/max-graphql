@@ -136,9 +136,10 @@
     r))
 
 (defn register-list-container
-  [parent-id parent-object-name column-name]
-  (println "registering list contanier " parent-id " and " parent-object-name " and " column-name)
-  (let [u (UniqueMboContainer. parent-object-name parent-id)
+  [parent-id parent-handle column-name]
+  (println "registering list contanier " parent-id " and " parent-handle " and " column-name)
+  (let [parent-cont (@registered-containers parent-handle)
+        u (SingleMboContainer. parent-cont parent-id)
         r (ListContainer. u column-name)]
     (swap! registered-containers assoc (get-id r) r)
     r))
@@ -160,7 +161,7 @@
                    (aget args "id"))]
     (let [cont
           (if list-column
-            (register-list-container parent-id parent-object list-column)
+            (register-list-container parent-id parent-handle list-column)
             (if relationship
               (register-rel-container  parent-id parent-handle relationship)
               (if uniqueid
