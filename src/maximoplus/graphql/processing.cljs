@@ -492,7 +492,7 @@
   ;;there is no point in separating this in two functions, one that will execute this, and another that will update the InputWF data. We have to do it manuaully.
   (if-let [action-set (c/get-state app-container :wf-action-set)]
     (prom-then->
-     (prom-command! c/set-value action-set "actionid" action-id )
+     (prom-command! c/set-value action-set "actionid" (str action-id ))
      (prom-command! c/set-value action-set "memo" memo)
      (prom-command! c/choose-wf-actions (c/get-id app-container) action-set);;director and app container have the same id
      (fn [res]
