@@ -568,7 +568,7 @@
       (= field "save") (get-save-mutation-resolver)
       (= field "rollback") (get-rollback-mutation-resolver)
       (= field "routeWF") (get-routewf-mutation-resolver)
-      (= field "chooseWFAction" (get-choosewf-mutation-resolver))
+      (= field "chooseWFAction") (get-choosewf-mutation-resolver)
       :else (fn [x] x)))
 
 (defn get-query-resolver
