@@ -494,7 +494,7 @@
     (prom-then->
      (prom-command! c/set-value action-set "actionid" (str action-id ))
      (prom-command! c/set-value action-set "memo" memo)
-     (prom-command! c/choose-wf-actions (c/get-id app-container) action-set);;director and app container have the same id
+     (prom-command! c/choose-wf-actions  action-set app-container);;director and app container have the same id
      (fn [res]
        (process-wf-result res action-set)))
     (throw  (js/Error. "Invalid action set id"))))
