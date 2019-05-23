@@ -34,5 +34,22 @@
                       :pretty-print true}
    :devtools {:repl-init-ns graphqlserver.core
               :before-load graphqlserver.core/stop
-              :after-load graphqlserver.core/start}}}
+              :after-load graphqlserver.core/start}}
+  :scriptprod
+  {:id        :scriptprod
+   :target    :node-script
+   :main      maximoplus.graphql/main
+   :output-to "out/gscriptprod.js"
+   :compiler-options {:optimizations :advanced
+                      :infer-externs :auto}
+   }
+  :serverprod
+  {:id :serverprod
+   :target :node-script
+   :main  graphqlserver.core/main
+   :output-to "out/serverprod.js"
+   :compiler-options {:optimizations :advanced
+                      :infer-extenrs :auto}
+   }
+  }
  }
