@@ -40,16 +40,14 @@
    :target    :node-script
    :main      maximoplus.graphql/main
    :output-to "out/gscriptprod.js"
-   :compiler-options {:optimizations :advanced
-                      :infer-externs :auto}
+   :compiler-options {:optimizations :advanced}
    }
   :serverprod
   {:id :serverprod
    :target :node-script
    :main  graphqlserver.core/main
    :output-to "out/serverprod.js"
-   :compiler-options {:optimizations :advanced
-                      :infer-extenrs :auto}
+   :compiler-options {:optimizations :advanced}
    }
   }
  }

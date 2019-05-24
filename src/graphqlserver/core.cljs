@@ -424,7 +424,7 @@
           rel-name field
           pid (aget context "pid")
           qbe (aget args "qbe")
-          _ (.log js.console (str "calling the rel resolver for parent id " parent-id  " and rel-name " rel-name))
+          _ (println (str "calling the rel resolver for parent id " parent-id  " and rel-name " rel-name))
           command-object #js{:command "fetch"
                              :args #js{:relationship rel-name
                                        :columns (get-maximo-scalar-fields return-type)
@@ -613,9 +613,9 @@
     union-type-resolvers)))
 
 (defn ^:dev/before-load stop []
-  (js/console.log "stop")
+  (println "stop")
   (.close @running))
 
 (defn ^:dev/after-load start []
-  (js/console.log "start")
+  (println "start")
   (main))

@@ -3,7 +3,8 @@
             [maximoplus.core :as c :refer [get-id get-fetched-row-data get-column-metadata]]
             [clojure.string :as s :refer [replace lower-case]]
             [maximoplus.promises :as p]
-            [maximoplus.graphql.components :refer [AttachToExisting]])
+            [maximoplus.graphql.components :refer [AttachToExisting]]
+            ["dotenv" :as dotenv])
   
   (:require-macros [maximoplus.graphqlmacros :refer [prom-> prom-then-> prom-command!]]
                    [maximoplus.macros :refer [kk!]]))
