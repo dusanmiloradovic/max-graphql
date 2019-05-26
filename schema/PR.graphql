@@ -1,0 +1,32 @@
+type PR{
+  id:ID
+  prnum:String
+  description:String
+  vendor:String
+  status:String
+  _handle:String
+  list_vendor(fromRow:Int,numRows:Int, _handle:String, qbe:COMPANIESQBE):[COMPANIES]
+
+}
+
+input PRQBE{
+  id:ID
+  prnum:String
+  description:String
+  status:String
+  vendor:String
+}
+
+type COMPANIES{
+  company:String
+  name:String
+}
+
+input COMPANIESQBE{
+  company:String
+  name:String
+}
+
+type Query{
+  pr(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[PR]
+}

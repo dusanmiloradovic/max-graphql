@@ -1,0 +1,76 @@
+type ColumnMetadata{
+  attributeName:String
+  remarks:String
+  title:String
+  persistent:Boolean
+  isALNDomain:Boolean
+  domainId:String
+  hasLD:Boolean
+  maxType:String
+  length:Int
+  scale:Int
+}
+
+type ALNDOMAIN{
+  id:ID
+  value:String
+  description:String
+}
+
+input ALNDOMAINQBE{
+  id:ID
+  value:String
+  description:String
+}
+
+#WF types - will come as predefined, and automatically inclucdd
+type WFACTION{
+  actionid:Int
+  instruction:String
+}
+
+type WFTRANSACTION{
+  memo:String
+  personid:String
+  transdate:String
+}
+
+type INPUTWF{
+  actionid:Int
+  instruction:String
+  list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]
+}
+
+type COMPLETEWF{
+  taskdescription:String
+  actionid:Int
+  instruction:String
+  list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]
+  memos(fromRow:Int, numRows:Int,_handle:String):[WFTRANSACTION]
+}
+
+type INTERACTION{
+  nextapp:String
+  nexttab:String
+}
+
+type WFFINISHED{
+  code:String
+}
+#Boolean would be enough, but union is possible only on object types
+
+union WFActionResult = INPUTWF | COMPLETEWF | WFFINISHED | INTERACTION
+
+type WFResponse{
+  title:String
+  responsetext:String
+  messages:[String]
+  result:WFActionResult
+}
+
+type Mutation{
+  routeWF(_handle:String, processName:String):WFResponse
+  chooseWFAction(_handle:String,actionid:Int,memo:String):WFResponse
+  save:Boolean
+  rollback:Boolean
+}
