@@ -20,6 +20,8 @@
 
 (n/set-net-type (Node.))
 
+(println "server root = " (aget (aget js/process "env") "SERVER_ROOT"))
+
 (n/set-server-root (aget (aget js/process "env") "SERVER_ROOT")) 
 
 (c/setGlobalFunction "globalDisplayWaitCursor" (fn [_]))
@@ -68,12 +70,14 @@
         (.log js/console "logging in script")
         (c/max-login username password
                      (fn [ok]
+                       (println "got ok response" ok)
                        (c/page-init)
                        (p-deferred-on @c/page-init-channel
                                       (send-process #js{:type "loggedin" :val (n/get-tabsess)})
                                       (.log js/console "logged in process sent the message")
                                       ))
                      (fn [err]
+                       (println "got err response " err)
                        (send-process #js{:type "loginerror" :val err}))
                      )))))
 

@@ -27,8 +27,10 @@
 
 (defn send-data
   [option callback error-callback]
+  (println "send-data " option)
   (request option 
            (fn [err resp body]
+             (println "callback send-data!!!")
              (reset! session-cookie (.getCookieString cookie-jar (aget option "url")))
              (if err
                (error-callback [[:net err] 6 (when resp (.-statusCode resp))]) ;;For the compatibility reasons with browser, I will use just 6 (error) and 0 no error
