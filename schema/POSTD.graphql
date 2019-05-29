@@ -14,7 +14,7 @@ type POSTD{
   poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINESTDQBE):[POLINESTD]
   list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN] 
   _handle:String
-  _metadata:POMetadata
+  _metadata:POSTDMetadata
   pochangestatus(_handle:String):[POCHANGESTATUS] #non persistent mbosets usually have only one record (TODO make that option in the front end tool, this should be the output for non persistent relationship field
 }
 

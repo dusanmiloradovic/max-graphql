@@ -7,6 +7,7 @@
    ["basic-auth" :as auth]
    ["uniqid" :as uniqid]
    ["graphql" :refer [buildSchema graphqlSync introspectionQuery]]
+   ["graphql-tools" :refer [mergeSchenas makeExecutableSchema]]
    [cljs-node-io.core :as io :refer [slurp spit]]
    [cljs.core.async :as a :refer [<! put! chan promise-chan]]
    [cognitect.transit :as transit])
@@ -135,12 +136,24 @@
 
 (declare get-auto-resolvers)
 
+(defn get-type-defs
+  []
+  (let [schema-str1 (slurp "schema/system.graphql")
+        schema-str2 (slurp "schema/POSTD.graphql")]
+    #js[(gql schema-str1) (gql schema-str2)])
+
+  )
+
+(defn get-executable-schema
+  (makeExecutable))
+
 (defn main
   []
-  (let [schema (get-schema-string)
-        typedefs (gql schema)
+  (let [
+        ;;schema (get-schema-string)
+        ;;        typedefs (gql schema)
         server (ApolloServer.
-                #js{:typeDefs typedefs
+                #js{:typeDefs (get-type-defs)
                     :resolvers (get-auto-resolvers)
                     :playground #js{:settings #js{"editor.theme" "light"
                                                   "request.credentials" "same-origin"
