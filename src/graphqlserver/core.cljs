@@ -9,6 +9,7 @@
    ["graphql" :refer [buildSchema graphqlSync introspectionQuery]]
    ["graphql-tools" :refer [mergeSchemas makeExecutableSchema addMockFunctionsToSchema]]
    ["merge-graphql-schemas" :refer [mergeTypes]]
+   ["fs" :as fs]
    [cljs-node-io.core :as io :refer [slurp spit]]
    [cljs.core.async :as a :refer [<! put! chan promise-chan]]
    [cognitect.transit :as transit])
@@ -32,14 +33,13 @@
   (reset! debug-process (fork (str js/__dirname "/gscript.js") #js[] #js{:execArgv #js["--inspect=6554" ]}))
   (.log js/console @debug-process))
 
-
 (defn get-combined-types
   []
-  (let [schema-str1 (gql (slurp "schema/system.graphql"))
-        schema-str2 (gql (slurp "schema/PO.graphql"))
-        ]
-    (mergeTypes #js[schema-str1 schema-str2] #js{:all true})))
-
+  (let [files (.map
+               (.filter (fs/readdirSync "schema")
+                        (fn [f] (.endsWith  f ".graphql")))
+               (fn [f] (->> f (str "schema/") slurp gql)))]
+    (mergeTypes files #js{:all true})))
 
 (defn get-ast-tree
   []

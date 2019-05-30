@@ -28,5 +28,5 @@ input COMPANIESQBE{
 }
 
 type Query{
-  pr(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[PR]
+  pr(fromRow:Int, numRows:Int,_handle:String,qbe:PRQBE):[PR]
 }
