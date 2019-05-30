@@ -7,7 +7,7 @@
    ["basic-auth" :as auth]
    ["uniqid" :as uniqid]
    ["graphql" :refer [buildSchema graphqlSync introspectionQuery]]
-   ["graphql-tools" :refer [mergeSchenas makeExecutableSchema]]
+   ["graphql-tools" :refer [mergeSchemas makeExecutableSchema]]
    [cljs-node-io.core :as io :refer [slurp spit]]
    [cljs.core.async :as a :refer [<! put! chan promise-chan]]
    [cognitect.transit :as transit])
@@ -136,16 +136,17 @@
 
 (declare get-auto-resolvers)
 
-(defn get-type-defs
+(defn get-merged-schemas
   []
   (let [schema-str1 (slurp "schema/system.graphql")
-        schema-str2 (slurp "schema/POSTD.graphql")]
-    #js[(gql schema-str1) (gql schema-str2)])
+        schema-str2 (slurp "schema/POSTD.graphql")
+        schema1 (makeExecutableSchema #js{:typeDefs schema-str1 :resolvers (get-auto-resolvers)} )
+        schema2 (makeExecutableSchema #js{:typeDefs schema-str2 :resolvers (get-auto-resolvers)} )]
+    (mergeSchemas
+     #js{:schemas
+         #js[schema1 schema2]
+         })))
 
-  )
-
-(defn get-executable-schema
-  (makeExecutable))
 
 (defn main
   []
@@ -153,8 +154,10 @@
         ;;schema (get-schema-string)
         ;;        typedefs (gql schema)
         server (ApolloServer.
-                #js{:typeDefs (get-type-defs)
-                    :resolvers (get-auto-resolvers)
+                #js{
+                    ;;:typeDefs (get-type-defs)
+                    ;;                    :resolvers (get-auto-resolvers)
+                    :schema (get-merged-schemas)
                     :playground #js{:settings #js{"editor.theme" "light"
                                                   "request.credentials" "same-origin"
                                                   }
