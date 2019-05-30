@@ -1,0 +1,319 @@
+# Comments in GraphQL are defined with the hash (#) symbol.
+
+# The "Query" type is the root of all GraphQL queries.
+# (A "Mutation" type will be covered later on.)
+type Query {
+  #  books: [Book]
+  # book(author:String): Book
+  po(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[POSTD]
+  pr(fromRow:Int, numRows:Int,_handle:String,qbe:PRSTDQBE):[PRSTD]
+#  pr(fromRow:Int, numRows:Int,_handle:String,qbe:POSTDQBE):[PR]
+#  po(fromRow:Int, numRows:Int,_handle:String,qbe:POQBE):[PO]
+}
+
+#obrisi ovo kada ide u prod, iz gaska
+type POSTD{
+  id:ID
+  ponum:String
+  description:String
+  orderdate:String #TODO this should be GraphQL date (external package)
+  status:String
+  _handle:String
+  polinestd(fromRow:Int,numRows:Int, _handle:String, qbe:POLINESTDQBE):[POLINESTD]
+  list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN]
+  pochangestatus(_handle:String):[POCHANGESTATUS] #non persistent mbosets usually have only one record (TODO make that option in the front end tool, this should be the output for non persistent relationship field
+}
+
+input POSTDQBE{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+}
+
+input POSTDInput{
+  ponum:String
+  description:String
+  status:String
+  orderdate:String #TODO this should be GraphQL date (external package)
+  _handle:String
+}
+
+type PRSTD{
+  id:ID
+  prnum:String
+  description:String
+  vendor:String
+  status:String
+  _handle:String
+  list_vendor(fromRow:Int,numRows:Int, _handle:String, qbe:COMPANIESQBE):[COMPANIES]
+
+}
+
+input PRSTDQBE{
+  id:ID
+  prnum:String
+  description:String
+  status:String
+  vendor:String
+}
+
+type PR{
+  id:ID
+  prnum:String
+  description:String
+  vendor:String
+  status:String
+  _handle:String
+  list_vendor(fromRow:Int,numRows:Int, _handle:String, qbe:COMPANIESQBE):[COMPANIES]
+
+}
+
+input PRQBE{
+  id:ID
+  prnum:String
+  description:String
+  status:String
+  vendor:String
+}
+
+type COMPANIES{
+  company:String
+  name:String
+}
+
+input COMPANIESQBE{
+  company:String
+  name:String
+}
+
+type ColumnMetadata{
+  attributeName:String
+  remarks:String
+  title:String
+  persistent:Boolean
+  isALNDomain:Boolean
+  domainId:String
+  hasLD:Boolean
+  maxType:String
+  length:Int
+  scale:Int
+}
+
+type POMetadata{
+  ponum:ColumnMetadata
+  description:ColumnMetadata
+  status:ColumnMetadata
+  orderdate:ColumnMetadata
+}
+
+type PO{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+  orderdate:String #TODO this should be GraphQL date (external package)
+  poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]
+  list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN] 
+  _handle:String
+  _metadata:POMetadata
+  pochangestatus(_handle:String):[POCHANGESTATUS] #non persistent mbosets usually have only one record (TODO make that option in the front end tool, this should be the output for non persistent relationship field
+}
+
+#For the qbe types all paramenters will be string except the id
+#If id is set wverything else is ignored
+input POQBE{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+}
+
+input POInput{
+  ponum:String
+  description:String
+  status:String
+  orderdate:String #TODO this should be GraphQL date (external package)
+  _handle:String
+}
+
+type POLINE{
+  id:ID
+  ponum:String
+  description:String
+  polinenum:Int
+  orderqty:Float
+  orderunit:String
+  unitcost:Float
+  linecost:Float
+  _handle:String
+}
+
+input POLINEInput{
+  ponum:String
+  description:String
+  polinenum:Int
+  orderqty:Float
+  orderunit:String
+  unitcost:Float
+  linecost:Float
+  _handle:String
+}
+
+type POLINEMetadata{
+  ponum:ColumnMetadata
+  description:ColumnMetadata
+  polinenum:ColumnMetadata
+  orderqty:ColumnMetadata
+  orderunit:ColumnMetadata
+  unitcost:ColumnMetadata
+  linecost:ColumnMetadata
+}
+
+type POLINESTD{
+  id:ID
+  ponum:String
+  description:String
+  polinenum:Int
+  orderqty:Float
+  orderunit:String
+  unitcost:Float
+  linecost:Float
+  _handle:String
+  
+}
+
+input POLINEQBE{
+  id:ID
+  ponum:String
+  description:String
+  polinenum:Int
+  orderqty:Float
+  orderunit:String
+  unitcost:Float
+  linecost:Float
+  
+}
+
+input POLINESTDQBE{
+  id:ID
+  ponum:String
+  description:String
+  polinenum:Int
+  orderqty:Float
+  orderunit:String
+  unitcost:Float
+  linecost:Float
+  
+}
+
+input POLINESTDInput{
+  ponum:String
+  description:String
+  polinenum:Int
+  orderqty:Float
+  orderunit:String
+  unitcost:Float
+  linecost:Float
+  _handle:String
+}
+
+type ALNDOMAIN{
+  id:ID
+  value:String
+  description:String
+}
+
+input ALNDOMAINQBE{
+  id:ID
+  value:String
+  description:String
+}
+
+type POCHANGESTATUS{
+  status:String
+  memo:String
+  statdate:String
+  _handle:String #no id - it is non-persistent
+}
+
+input POCHANGESTATUSInput{
+  status:String
+  memo:String
+  statdate:String
+}
+#WF types - will come as predefined, and automatically inclucdd
+type WFACTION{
+  actionid:Int
+  instruction:String
+}
+
+type WFTRANSACTION{
+  memo:String
+  personid:String
+  transdate:String
+}
+
+type INPUTWF{
+  actionid:Int
+  instruction:String
+  list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]
+}
+
+type COMPLETEWF{
+  taskdescription:String
+  actionid:Int
+  instruction:String
+  list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]
+  memos(fromRow:Int, numRows:Int,_handle:String):[WFTRANSACTION]
+}
+
+type INTERACTION{
+  nextapp:String
+  nexttab:String
+}
+
+type WFFINISHED{
+  code:String
+}
+#Boolean would be enough, but union is possible only on object types
+
+union WFActionResult = INPUTWF | COMPLETEWF | WFFINISHED | INTERACTION
+
+type WFResponse{
+  title:String
+  responsetext:String
+  messages:[String]
+  result:WFActionResult
+}
+
+#When we get boolean as result, it means the wf process has been finished
+#END WF types
+
+type Mutation{
+#  addPO(_handle:String,data:POInput):PO
+#  updatePO(_handle:String,id:ID,data:POInput):PO
+#  deletePO(_handle:String,id:ID):Boolean
+#  addPOLINE(_handle:String,data:POLINEInput):POLINE
+#  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
+#  deletePOLINE(_handle:String,id:ID):Boolean
+#  updatePOCHANGESTATUS(_handle:String,id:ID,data:POCHANGESTATUSInput):POCHANGESTATUS
+#  commandPOCHANGESTATUS(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
+#  deletePOCHANGESTATUS(_handle:String,id:ID):POCHANGESTATUS
+ # addPOCHANGESTATUS(_handle:String,data:POCHANGESTATUSInput):POCHANGESTATUS
+  #since this is non persistent, update poCHANGEStatus is only required (no add or delete make sense, maybe it ddoes in general case)!!!. Think about removing the id. In any case change the logic for any update and delete - if there is no ID, update or delete the current item in MboSet 
+
+# same as the update, most probably id will not be included, because usually the command will be on non-persisten mbo, but in case it is persistent, we need the 
+  addPO(_handle:String,data:POSTDInput):POSTD
+  updatePO(_handle:String,id:ID,data:POSTDInput):POSTD
+  deletePO(_handle:String,id:ID):Boolean
+  addPOLINE(_handle:String,data:POLINESTDInput):POLINESTD
+  updatePOLINE(_handle:String,id:ID,data:POLINESTDInput):POLINESTD
+  deletePOLINE(_handle:String,id:ID):Boolean
+  updatePOCHANGESTATUS(_handle:String,id:ID,data:POCHANGESTATUSInput):POCHANGESTATUS
+  commandPOCHANGESTATUS(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
+  routeWF(_handle:String, processName:String):WFResponse
+  chooseWFAction(_handle:String,actionid:Int,memo:String):WFResponse
+  save:Boolean
+  rollback:Boolean
+}
