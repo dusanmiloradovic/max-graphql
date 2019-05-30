@@ -7,7 +7,8 @@
    ["basic-auth" :as auth]
    ["uniqid" :as uniqid]
    ["graphql" :refer [buildSchema graphqlSync introspectionQuery]]
-   ["graphql-tools" :refer [mergeSchemas makeExecutableSchema]]
+   ["graphql-tools" :refer [mergeSchemas makeExecutableSchema addMockFunctionsToSchema]]
+   ["merge-graphql-schemas" :refer [mergeTypes]]
    [cljs-node-io.core :as io :refer [slurp spit]]
    [cljs.core.async :as a :refer [<! put! chan promise-chan]]
    [cognitect.transit :as transit])
@@ -30,16 +31,19 @@
   (println "debbuging on the port 6554")
   (reset! debug-process (fork (str js/__dirname "/gscript.js") #js[] #js{:execArgv #js["--inspect=6554" ]}))
   (.log js/console @debug-process))
-  
 
-(defn get-schema-string
+
+(defn get-combined-types
   []
-  (slurp "schema/sample.graphql"))
+  (let [schema-str1 (gql (slurp "schema/system.graphql"))
+        schema-str2 (gql (slurp "schema/PO.graphql"))
+        ]
+    (mergeTypes #js[schema-str1 schema-str2] #js{:all true})))
 
 
 (defn get-ast-tree
   []
-  (let [schema (buildSchema (get-schema-string))]
+  (let [schema (buildSchema (get-combined-types))]
     (.-data (graphqlSync schema introspectionQuery))))
 
 (declare send-graphql-command)
@@ -136,28 +140,15 @@
 
 (declare get-auto-resolvers)
 
-(defn get-merged-schemas
-  []
-  (let [schema-str1 (slurp "schema/system.graphql")
-        schema-str2 (slurp "schema/POSTD.graphql")
-        schema1 (makeExecutableSchema #js{:typeDefs schema-str1 :resolvers (get-auto-resolvers)} )
-        schema2 (makeExecutableSchema #js{:typeDefs schema-str2 :resolvers (get-auto-resolvers)} )]
-    (mergeSchemas
-     #js{:schemas
-         #js[schema1 schema2]
-         })))
-
-
 (defn main
   []
   (let [
-        ;;schema (get-schema-string)
-        ;;        typedefs (gql schema)
+        schema (get-combined-types)
+        typedefs (gql schema)
         server (ApolloServer.
                 #js{
-                    ;;:typeDefs (get-type-defs)
-                    ;;                    :resolvers (get-auto-resolvers)
-                    :schema (get-merged-schemas)
+                    :typeDefs typedefs
+                    :resolvers (get-auto-resolvers)
                     :playground #js{:settings #js{"editor.theme" "light"
                                                   "request.credentials" "same-origin"
                                                   }
@@ -206,9 +197,9 @@
     (.log js/console "trying to get the process for maximo sesion")
     (.log js/console max-session-id)
     (:process (second (first
-     (filter (fn [[k v]]
-               (= max-session-id (:maximo-session v)))
-             @child-processes))))))
+                       (filter (fn [[k v]]
+                                 (= max-session-id (:maximo-session v)))
+                               @child-processes))))))
 
 (defn get-maximoplus-pid
   [req-session]
@@ -366,7 +357,7 @@
   ;;this will be used in resolver to create the list of fields to fetch from the container. The automatically created resolver will use this.
   (->> (get-scalar-fields gql-type)
        (filter #(and (not= (:name %) "id" )
-                    (not (.startsWith (:name %) "_"))))
+                     (not (.startsWith (:name %) "_"))))
        (map :name)
        clj->js))
 
@@ -379,29 +370,29 @@
   (if (= "Subscription" object-name)
     :subscription
     (if (= "Mutation" object-name)
-        :mutation
-        :query)))
+      :mutation
+      :query)))
 
 (defn get-app-resolver-function
- [type field return-type]
- (fn [obj args context info]
-   (let [from-row (aget args "fromRow")
-         num-rows (aget args "numRows")
-         handle (aget args "_handle")
-         qbe (aget args "qbe")
-         res-p (send-graphql-command 
-                (aget context "pid")
-                #js{:command "fetch"
-                    :args #js{:app field
-                              :object-name return-type
-                              :columns (get-maximo-scalar-fields return-type)
-                              :start-row from-row
-                              :num-rows num-rows
-                              :handle handle
-                              :qbe qbe
-                              }}
-                )]
-     (.then res-p process-data-rows))))
+  [type field return-type]
+  (fn [obj args context info]
+    (let [from-row (aget args "fromRow")
+          num-rows (aget args "numRows")
+          handle (aget args "_handle")
+          qbe (aget args "qbe")
+          res-p (send-graphql-command 
+                 (aget context "pid")
+                 #js{:command "fetch"
+                     :args #js{:app field
+                               :object-name return-type
+                               :columns (get-maximo-scalar-fields return-type)
+                               :start-row from-row
+                               :num-rows num-rows
+                               :handle handle
+                               :qbe qbe
+                               }}
+                 )]
+      (.then res-p process-data-rows))))
 
 ;;TODO for all the resolver function, have strict validation, or it will fail
 (defn get-list-domain-resolver-function
@@ -577,15 +568,15 @@
 (defn get-mutation-resolver
   [type field return-type]
   (cond
-      (.startsWith field "add") (get-add-mutation-resolver field return-type)
-      (.startsWith field "delete") (get-delete-mutation-resolver field return-type)
-      (.startsWith field "update") (get-update-mutation-resolver field return-type)
-      (.startsWith field "command") (get-command-mutation-resolver field return-type)
-      (= field "save") (get-save-mutation-resolver)
-      (= field "rollback") (get-rollback-mutation-resolver)
-      (= field "routeWF") (get-routewf-mutation-resolver)
-      (= field "chooseWFAction") (get-choosewf-mutation-resolver)
-      :else (fn [x] x)))
+    (.startsWith field "add") (get-add-mutation-resolver field return-type)
+    (.startsWith field "delete") (get-delete-mutation-resolver field return-type)
+    (.startsWith field "update") (get-update-mutation-resolver field return-type)
+    (.startsWith field "command") (get-command-mutation-resolver field return-type)
+    (= field "save") (get-save-mutation-resolver)
+    (= field "rollback") (get-rollback-mutation-resolver)
+    (= field "routeWF") (get-routewf-mutation-resolver)
+    (= field "chooseWFAction") (get-choosewf-mutation-resolver)
+    :else (fn [x] x)))
 
 (defn get-query-resolver
   [type field return-type]
