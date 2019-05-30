@@ -39,14 +39,14 @@
   {:id        :scriptprod
    :target    :node-script
    :main      maximoplus.graphql/main
-   :output-to "out/gscriptprod.js"
+   :output-to "out/gscript.js"
    :compiler-options {:optimizations :advanced}
    }
   :serverprod
   {:id :serverprod
    :target :node-script
    :main  graphqlserver.core/main
-   :output-to "out/serverprod.js"
+   :output-to "out/server.js"
    :compiler-options {:optimizations :advanced}
    }
   }
