@@ -9,6 +9,8 @@
   (:require-macros [maximoplus.graphqlmacros :refer [prom-> prom-then-> prom-command!]]
                    [maximoplus.macros :refer [kk!]]))
 
+(set! *warn-on-infer* true)
+
 (def thousands-sep-symbol
   (let [smpl (.toLocaleString 1111)]
     (aget smpl 1)))

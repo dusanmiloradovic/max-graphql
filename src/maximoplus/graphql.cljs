@@ -16,6 +16,8 @@
                    [cljs.core.async.macros :refer [go]]
                    ))
 
+(set! *warn-on-infer* true)
+
 (dotenv/config)
 
 (n/set-net-type (Node.))

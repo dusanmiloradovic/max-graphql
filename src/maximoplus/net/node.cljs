@@ -6,6 +6,8 @@
    ["eventsource" :as EventSource])
   )
 
+(set! *warn-on-infer* true)
+
 (def cookie-jar (.jar request));; I have to get it explicitely, to share with eventsource
 
 ;;we can put jar true, because oll the variables are global for one session, so we have to spawn this from the main nodejs process (and then there is no need to have multiple jars)
@@ -18,7 +20,7 @@
 
 (defn is-error?
   ;;with the request node lib, the error will not come even if the http error code is 40x (maybe even 50x), it seems that the error is thrown only when the lib was not able to send
-  [resp]
+  [^js resp]
   (> (.-statusCode resp) 400))
 
 (defn get-url-with-tabsess
@@ -29,7 +31,7 @@
   [option callback error-callback]
   (println "send-data " option)
   (request option 
-           (fn [err resp body]
+           (fn [^js err ^js resp ^js body]
              (println "callback send-data!!!")
              (reset! session-cookie (.getCookieString cookie-jar (aget option "url")))
              (if err
