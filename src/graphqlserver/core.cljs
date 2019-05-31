@@ -15,6 +15,8 @@
    [cognitect.transit :as transit])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
+(set! *warn-on-infer* true)
+
 (def child-processes (atom {}))
 
 (def pending-messages (atom {}));;we send the commadn to the child process. When we receive it back, the promise is resolved, apollo returns the data to the client, and we delete the message from the map
@@ -92,7 +94,7 @@
 
 
 (defn max-session-check-middleware
-  [req res next]
+  [^js req ^js res next]
   (if (and
        (.-session req )
        (not (.-t (.-session req))))
@@ -107,7 +109,7 @@
 (declare get-maximoplus-process)
 
 (defn max-basic-auth-middleware
-  [req res next]
+  [^js req ^js res next]
   ;;for development only. the production will use jwt and error callback instead of http codes
   ;;it will not throw the exception, session middleware will
   (if-let [credentials (auth req)]
@@ -174,7 +176,7 @@
                        (.log js/console (str "server ready at" (.-graphqlPath server))))))))
 
 (defn logged-in
-  [process  maximo-session-id cb]
+  [^js process  maximo-session-id cb]
   (let [pid (.-pid process)
         obj (@child-processes pid)]
     (swap! child-processes assoc pid (assoc obj :maximo-session maximo-session-id))
@@ -219,7 +221,7 @@
       (put! ch (transit-read value)))))
 
 (defn process-child-message
-  [m process cb]
+  [m ^js process cb]
   ;;handle to session t
   (let [type (aget m "type")
         value (aget m "val")

@@ -47,7 +47,8 @@
    :target :node-script
    :main  graphqlserver.core/main
    :output-to "out/server.js"
-   :compiler-options {:optimizations :advanced}
+   :compiler-options {:optimizations :advanced
+                      :infer-externs true}
    }
   }
  }
