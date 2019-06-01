@@ -1,0 +1,12 @@
+*.org
+.git
+.gitignore
+node_modules
+.nrepl-port
+project.clj
+schema
+.shadow-cljs
+shadow-cljs.edn
+src
+target
+winpath.bat
