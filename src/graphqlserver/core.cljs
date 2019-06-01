@@ -37,10 +37,12 @@
 
 (defn get-combined-types
   []
-  (let [files (.map
+  (let [internal-schema (-> "internal_schema/system.graphql" slurp gql)
+        files (.map
                (.filter (fs/readdirSync "schema")
                         (fn [f] (.endsWith  f ".graphql")))
                (fn [f] (->> f (str "schema/") slurp gql)))]
+    (.push files internal-schema)
     (mergeTypes files #js{:all true})))
 
 (defn get-ast-tree
