@@ -10,7 +10,6 @@
             [maximoplus.graphql.processing :as pr :refer [normalize-data-object normalize-data-bulk]]
             [cognitect.transit :as transit]
             ["os-locale" :refer [sync]]
-            ["dotenv" :as dotenv]
             )
   (:require-macros [maximoplus.macros :as mm :refer [def-comp googbase kk! kk-nocb! kk-branch-nocb! p-deferred p-deferred-on custom-this kc!]]
                    [cljs.core.async.macros :refer [go]]
@@ -18,13 +17,17 @@
 
 (set! *warn-on-infer* true)
 
-(dotenv/config)
-
 (n/set-net-type (Node.))
 
-(println "server root = " (aget (aget js/process "env") "SERVER_ROOT"))
+(def SERVER_ROOT
+  (if-let [server-root (aget (aget js/process "env") "SERVER_ROOT")]
+    server-root
+    "http://localhost:8080" ;;development only
+    ))
 
-(n/set-server-root (aget (aget js/process "env") "SERVER_ROOT")) 
+(println "server root = " SERVER_ROOT)
+
+(n/set-server-root SERVER_ROOT) 
 
 (c/setGlobalFunction "globalDisplayWaitCursor" (fn [_]))
 
