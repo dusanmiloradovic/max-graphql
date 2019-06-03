@@ -89,10 +89,8 @@
 
 (defn add-to-data-change-old
   [container]
-  (println "calling add-to-data-change")
   (let [main-cont
         (loop [cnt container]
-          (println "loop cid" (c/get-id cnt))
           (let [prt (b/get-parent cnt)]
             (if-not prt
               cnt
@@ -131,7 +129,7 @@
 
 (defn register-rel-container
   [parent-id parent-handle rel-name ]
-  (println "registering rel contanier " parent-id " and " parent-handle " and " rel-name)
+;;  (println "registering rel contanier " parent-id " and " parent-handle " and " rel-name)
   (let [parent-cont (@registered-containers parent-handle)
         u (SingleMboContainer. parent-cont parent-id)
         r (RelContainer. u rel-name)]
@@ -140,7 +138,7 @@
 
 (defn register-list-container
   [parent-id parent-handle column-name]
-  (println "registering list contanier " parent-id " and " parent-handle " and " column-name)
+;;  (println "registering list contanier " parent-id " and " parent-handle " and " column-name)
   (let [parent-cont (@registered-containers parent-handle)
         u (SingleMboContainer. parent-cont parent-id)
         r (ListContainer. u column-name)]
@@ -455,7 +453,7 @@
 
 (defn process-reassign-result
   [[res _ _] wf-action-set]
-  (println res))
+  (println "Processing reassing result " res))
 
 
 

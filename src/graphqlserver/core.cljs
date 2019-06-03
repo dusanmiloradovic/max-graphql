@@ -72,7 +72,7 @@
 
 (defn process-data-one-row
   [[component-id data flags]]
-  (println "process-data-one row " data)
+;;  (println "process-data-one row " data)
   (clj->js
    (into {}
          (conj
@@ -129,10 +129,10 @@
                                  (.send res "Authentication required"))
                                (when sessionid
                                  (aset session "t" sessionid)
-                                 (.log js/console (str "setting session to " sessionid))
+;;                                 (.log js/console (str "setting session to " sessionid))
                                  (next)))))
         (do
-          (.log js/console "valid session skipping logging")
+  ;;        (.log js/console "valid session skipping logging")
           (next))))
     (next)))
 
@@ -175,7 +175,7 @@
     (reset! running
             (.listen app #js {:port 4001}
                      (fn [url]
-                       (.log js/console (str "server ready at" (.-graphqlPath server))))))))
+                       (println (str "server ready at" (.-graphqlPath server))))))))
 
 (defn logged-in
   [^js process  maximo-session-id cb]
@@ -198,8 +198,8 @@
 (defn get-maximoplus-process
   [req-session]
   (when-let [max-session-id (aget req-session "t")]
-    (.log js/console "trying to get the process for maximo sesion")
-    (.log js/console max-session-id)
+;;    (.log js/console "trying to get the process for maximo sesion")
+  ;;  (.log js/console max-session-id)
     (:process (second (first
                        (filter (fn [[k v]]
                                  (= max-session-id (:maximo-session v)))
@@ -208,8 +208,8 @@
 (defn get-maximoplus-pid
   [req-session]
   (when-let [max-session-id (aget req-session "t")]
-    (.log js/console "trying to get the process for maximo sesion")
-    (.log js/console max-session-id)
+;;    (.log js/console "trying to get the process for maximo sesion")
+  ;;  (.log js/console max-session-id)
     (first(first
            (filter (fn [[k v]]
                      (= max-session-id (:maximo-session v)))
@@ -249,7 +249,7 @@
                          (process-child-message m prc cb)
                          ))
     (.on prc "exit" (fn [_]
-                      (.log js/console "child exit")
+;;                      (.log js/console "child exit")
                       (when (@child-processes pid)
                         (swap! child-processes dissoc pid))))
     (swap! child-processes assoc pid {:process prc})
@@ -274,7 +274,7 @@
   ;;with this id, and the promise will be resolved
   (let [uid (uniqid)
         ch (chan)]
-    (println command-object)
+;;    (println command-object)
     (swap! pending-messages assoc uid ch)
     (.send (:process (@child-processes pid))
            #js{:type "command"
@@ -332,7 +332,7 @@
 
 (defn get-scalar-fields
   [gql-type]
-  (println "getting the scalar fields for " gql-type)
+;;  (println "getting the scalar fields for " gql-type)
   (filter #(= (:type %) :scalar)
           (map get-field-data
                (aget
@@ -435,7 +435,7 @@
           rel-name field
           pid (aget context "pid")
           qbe (aget args "qbe")
-          _ (println (str "calling the rel resolver for parent id " parent-id  " and rel-name " rel-name))
+;;          _ (println (str "calling the rel resolver for parent id " parent-id  " and rel-name " rel-name))
           command-object #js{:command "fetch"
                              :args #js{:relationship rel-name
                                        :columns (get-maximo-scalar-fields return-type)

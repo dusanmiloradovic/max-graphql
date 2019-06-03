@@ -25,7 +25,7 @@
     "http://localhost:8080" ;;development only
     ))
 
-(println "server root = " SERVER_ROOT)
+;;(println "server root = " SERVER_ROOT)
 
 (n/set-server-root SERVER_ROOT) 
 
@@ -53,8 +53,8 @@
   (if (aget js/process "send")
     (.send js/process message)
     (do
-      (.log js/console "fake message sending")
-      (.log js/console message)
+      (println "fake message sending")
+      (println message)
       )))
 
 (.on js/process "uncaughtException"
@@ -70,19 +70,19 @@
         password (aget credentials "password")
         _ (u/debug password)]
     (if-not (and username password)
-      (.log js/console "logging in without username and password not yet implemented")
+      (println "logging in without username and password not yet implemented")
       (do
-        (.log js/console "logging in script")
+        (println "logging in script")
         (c/max-login username password
                      (fn [ok]
-                       (println "got ok response" ok)
+;;                       (println "got ok response" ok)
                        (c/page-init)
                        (p-deferred-on @c/page-init-channel
                                       (send-process #js{:type "loggedin" :val (n/get-tabsess)})
-                                      (.log js/console "logged in process sent the message")
+                                      (println "logged in process sent the message")
                                       ))
                      (fn [err]
-                       (println "got err response " err)
+                       (println "logging in error  " err)
                        (send-process #js{:type "loginerror" :val err}))
                      )))))
 
@@ -91,10 +91,10 @@
 ;;                       (u/debug "logging in")
 ;;                       (c/max-login "maxadmin" "maxadmin"
 ;;                                    (fn [ok]
-;;                                      (.log js/console "logged in")
+;;                                      (println "logged in")
 ;;                                      (test-app))
 ;;                                    (fn [err]
-;;                                      (.log js/console "Not logged in error")
+;;                                      (println "Not logged in error")
 ;;                                      (.loj js/console err)))))
 ;;global login function should hot be required.
 
@@ -272,7 +272,7 @@
                           :val (transit-write true)})))
      (catch
          (fn [err]
-           (println "zasto " err)
+           (println "execute command error  " err)
            (process-command-error uid err))))))
 
 (defn process-route-wf
@@ -328,14 +328,14 @@
        (when-let [type (aget m "type")]
          (let [val (aget m "val")
                uid (aget m "uid")]
-           ;;   (.log js/console "processing pparent message")
-           ;;           (.log js/console (str "type=" type))
-           ;;         (.log js/console (str "value=" val))
-           ;;       (.log js/console m)
-           ;;     (.log js/console "++++++++++++++++++++++++")
+           ;;   (println "processing pparent message")
+           ;;           (println (str "type=" type))
+           ;;         (println (str "value=" val))
+           ;;       (println m)
+           ;;     (println "++++++++++++++++++++++++")
            (condp = type
              "kill" (do
-                      (.log js/console "killing child process")
+                      (println "killing child process")
                       (.exit js/process))
              "login" (login val)
              "command" (process-command uid val) 
@@ -343,4 +343,4 @@
 
 (defn main
   []
-  (.log js/console "child process started"))
+  (println "child process started"))

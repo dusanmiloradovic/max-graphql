@@ -39,8 +39,6 @@
   [container event-name event-value]
   ;;this function will be called from all the methods that can send the data to be streamed
   ;;it will find is there any subscriptions for that type of event
-  ;;  (u/debug js/console "Subscription event for " (c/get-id container) " and " event-name " and " event-value)
-  ;;  (u/debug (c/get-id container) " " event-name " subscription event sent")
   (swap! pending-subscription-events conj {:container (c/get-id container) :event-name event-name :event-value event-value})
   )
 
@@ -129,6 +127,10 @@
   UI
   (^override render-row
    [this row])
+  (^override clear-control
+   [this]
+;;   (println "calling clear control")
+   )
   (^override render-row-before
    [this row existing-row])
   )
