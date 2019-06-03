@@ -64,22 +64,23 @@
 (defn login
   [val] ;;credentials will be the javascripit object send from tne parent process
   (let [credentials (aget val "credentials")
-        _ (u/debug credentials)
+    ;;    _ (u/debug credentials)
         username (aget credentials "username")
-        _ (u/debug username)
+      ;;  _ (u/debug username)
         password (aget credentials "password")
-        _ (u/debug password)]
+        ;;_ (u/debug password)
+        ]
     (if-not (and username password)
-      (println "logging in without username and password not yet implemented")
+;;      (println "logging in without username and password not yet implemented")
       (do
-        (println "logging in script")
+  ;;      (println "logging in script")
         (c/max-login username password
                      (fn [ok]
 ;;                       (println "got ok response" ok)
                        (c/page-init)
                        (p-deferred-on @c/page-init-channel
                                       (send-process #js{:type "loggedin" :val (n/get-tabsess)})
-                                      (println "logged in process sent the message")
+          ;;                            (println "logged in process sent the message")
                                       ))
                      (fn [err]
                        (println "logging in error  " err)
@@ -335,7 +336,7 @@
            ;;     (println "++++++++++++++++++++++++")
            (condp = type
              "kill" (do
-                      (println "killing child process")
+;;                      (println "killing child process")
                       (.exit js/process))
              "login" (login val)
              "command" (process-command uid val) 
@@ -343,4 +344,5 @@
 
 (defn main
   []
-  (println "child process started"))
+  ;;(println "child process started")
+  )
