@@ -71,7 +71,7 @@
         ;;_ (u/debug password)
         ]
     (if-not (and username password)
-;;      (println "logging in without username and password not yet implemented")
+      (println "logging in without username and password not yet implemented")
       (do
   ;;      (println "logging in script")
         (c/max-login username password
