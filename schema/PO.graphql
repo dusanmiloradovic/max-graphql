@@ -73,11 +73,11 @@ input POLINEQBE{
   id:ID
   ponum:String
   description:String
-  polinenum:Int
-  orderqty:Float
+  polinenum:String
+  orderqty:String
   orderunit:String
-  unitcost:Float
-  linecost:Float
+  unitcost:String
+  linecost:String
   
 }
 

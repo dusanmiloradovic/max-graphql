@@ -51,6 +51,97 @@ The number of records in any typical Maximo application can have hundreds of tho
 
 Example:
 
+Open your local GraphQL playground (http://localhost:4001), and run the following
+
 ```graphql
+query {
+  po(fromRow:0, numRows:2){
+    ponum
+    description
+    id
+  }
+}
+```
+
+## Getting the data from Maximo relationship
+
+So far, we have demonstraded just how to fetch the data from the top-level object, in our example the _PO_ type. Getting the relationship data is straightforward. 
+
+Change the _PO_ type in your schema to following:
+
+```graphql
+type PO{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+  orderdate:String
+  poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]	
+}
+```
+
+Note we added the __poline__ object type in the __PO__ tyoe. The __poline__ has the same signatyre as the __po__ type from within the __Query__ type (it has the _fromRow_, _numRows_, _handle_ and _qbe_ arguments).
+The name of the attribute is __critical__. You __have__ to give the type the name of the relationship from the Maximo Database Configuration, only in lower case.
+
+Now try running the query in Playground:
+
+```graphql
+query {
+  po(fromRow:0, numRows:2){
+    ponum
+    description
+    id
+    _handle
+    poline(fromRow:0, numRows:10){
+      polinenum
+      description
+    }
+  }
+}
+```
+
+## Querying and filtering
+
+GraphQL server for Maximo uses the Maximo QBE for data filtering. We have to define the separate input type for each object we want to query, and declare the searchable fields inside:
 
 ```
+input POQBE{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+}
+```
+
+By convention, the QBE input type should be named the same as the main type with the QBE appended.
+The QBE syntax is the same as in Maximo, and the same restrictions apply, i.e. you can query only the persistent fields, the syntax depend on the field type. In general, if the qbe works in Maximo, it will work in GraphQL Server as well.
+
+To test the qbe, we need to pass the qbe to query. The only way to do it through the Playground is by using the GraphQL _variables_.
+
+Modify the query to look like this:
+
+```graphql
+query($qbe:POQBE) {
+  po(fromRow:0, numRows:2, qbe:$qbe){
+    ponum
+    description
+    id
+    _handle
+    status
+    poline(fromRow:0, numRows:10){
+      polinenum
+      description
+    }
+  }
+}
+```
+
+Before running the query, specify the variable in the _Query Variables_ section of the Playground:
+
+```graphql
+{
+  "qbe":{
+    "status":"=WAPPR"
+  }
+}
+
