@@ -144,4 +144,67 @@ Before running the query, specify the variable in the _Query Variables_ section 
     "status":"=WAPPR"
   }
 }
+```
+
+## Pagination and handles
+
+
+GraphQL server runs Maximo in the background. It keeps the Maximo session open once the user logs in to the GraphQL server. Once you query any object, one of the attributes you can get is the virtual attribute ___handle__. The "__handle__" is the internal id of the MboSet which we had used to fetch the data.
+When we need to fetch the next set of data, to do the pagination, we need to pass the ___handle__ parameter as an attribute of the query.
+
+Suppose, you had ran the query, and the returned ___handle__ value is ":1PO". To get the next set of results, you would run the following query:
+
+```graphql
+query {
+  po(fromRow:10, numRows:10, _handle:":1PO"){
+    ponum
+    description
+    id
+    _handle
+  }
+}
+```
+
+Note that the handles are not used for pagination only, you require them for mutations as well (more about that later).
+
+## Value lists
+
+Value lists and domains are one of the crucial features of Maximo, and if you use GraphQL server to implement the application, you will most likely need them.
+
+To specify the value list in the main tyoe, you introduce the type with the name _list_attribute_name_ , where __attribute_name__ is the attribute with the value list. For example:
+
+```graphql
+type PO{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+  orderdate:String
+  poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]
+  list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN] 
+  _handle:String
+}
+```
+
+Note that you have to define the return type of the value list in the Schema Definition file. The __ALNDOMAIN__ and __SYNONYMDOMAIN__ types are predefined in the system, so you don't have to do it.
+
+Example query:
+
+```graphql
+query {
+  po(fromRow:0, numRows:1){
+    ponum
+    description
+    id
+    _handle
+    list_status(fromRow:0, numRows:20){
+      value
+      description
+    }
+  }
+}
+```
+
+
+# Mutations
 
