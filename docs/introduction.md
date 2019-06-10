@@ -207,6 +207,83 @@ query {
 
 ## Metadata
 
+GraphQL server exposes the information about Maximo object attributes. You can use this to get the default labels, data types and labels. For each type you have to define the conforming Metadata type. For example, for the _PO_ type we will define the _POMETADATA_ type:
+
+```graphql
+type POMetadata{
+  ponum:ColumnMetadata
+  description:ColumnMetadata
+  status:ColumnMetadata
+  orderdate:ColumnMetadata
+}
+
+```
+
+The __ColumnMetadata__ type is pre-defined in the system.
+The next step is to refer the metadata type from the main type, using the special ___metadata__ type:
+
+```graphql
+type PO{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+  orderdate:String
+  poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]
+  list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN] 
+  _handle:String
+  _metadata:POMetadata
+}
+```
+Try the following query in the playground:
+
+```graphql
+query {
+  po(fromRow:0, numRows:1){
+    _metadata{
+      description{
+		  title
+		  remarks
+		  persistent
+		  domainId
+      }
+      status{
+		  title
+		  remarks
+		  persistent
+		  domainId
+      }
+      
+    }
+  }
+}
+
+```
 
 # Mutations
+
+Mutations in GraphQL Server offer the same functionality for changing the data as in Maximo - you can _add_, _update_, _delete_ the data on object, route the workflow or run the Mbo or MboSet command.
+
+The aim of GraphQL server is to be completely compatible with Maximo. Maximo system is _transactional_, that means you have to explicitely save the record to store the data in the database. For that purpose we have two built in mutations in GraphQL server - __save__ and __rollback__.
+
+## Principles
+
+There are some general differences between the queries and mutations in any GraphQL system. The  most important ones are:
+
+- You can't nest the mutations, all the changes are done on one level only
+- To enter the data inside the mutation, you need the __input__ not the _type_
+
+- In GraphQL Server for Maximo, you have to pass the object handle for each mutation
+
+Lets illustrate this with an example. 
+
+In your GraphQL schema dedinition file, edit the _Mutation_ type, so it contains the upldatePOLINE mutation:
+
+```graphql
+type Mutation{
+  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
+ }
+```
+
+
 
