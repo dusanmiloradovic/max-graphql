@@ -285,5 +285,226 @@ type Mutation{
  }
 ```
 
+We have to define the input type now:
+
+```graphql
+input POLINEInput{
+  ponum:String
+  description:String
+  polinenum:Int
+  orderqty:Float
+  orderunit:String
+  unitcost:Float
+  linecost:Float
+  _handle:String
+}
+```
+
+Before running the above mutation, we need to run the GraphQl query to get the ___handle__ and __id__ of the _POLINE_ object we want to update. Use one of the queries from previous examples to get the values.
+
+Now we can run the mutation in Playground:
+
+```graphql
+mutation ($polineinput:POLINEInput, $id:ID, $handle:String){
+  updatePOLINE(data:$polineinput,id:$id,_handle:$handle ){
+    ponum
+    polinenum
+    description
+    id
+  }
+}
+
+```
+
+Use the results of previous GraphQL query to populate the _id_ and _handle_ Query Variablefs, and then populate any value of the input with test data. Below is the example from my system:
+
+```graphql
+{
+  "polineinput": {
+    "description": "test description"
+  },
+  "id": "2149016434",
+  "handle": ":c"
+}
+```
+
+If you want to save the results, you need to run the __save__ mutation:
+
+```graphql
+mutation{
+  save
+}
+```
+
+
+## Basic mutations - add, update, delete
+
+As you already must have guessed from the previous chapter, GrapqhQL Server use the name of the mutation to decide what action to perform in the background. The naming convection and signatures for the add, update and delete mutations are:
+
+For add:
+
+```graphql
+addOBJECTNAME(_handle:String, data:OBJECTNAMEInput):OBJECTNAME
+```
+
+Replace the _OBJECTNAME_ with the name of the object on which you perform the mutation(_POLINE_ in the previous example). As already explained, you need to define the input type
+
+For delete:
+
+```graphql
+  deleteOBJECTNAME(_handle:String,id:ID):Boolean
+```
+
+For update:
+
+```graphql
+ updateOBJECTNAME(_handle:String,id:ID,data:OBJECTNAMEInput):OBJECTNAME
+```
+
+Full example for _PO_ and _POLINE_:
+
+```graphql
+type Mutation{
+  addPO(_handle:String,data:POInput):PO
+  updatePO(_handle:String,id:ID,data:POInput):PO
+  deletePO(_handle:String,id:ID):Boolean
+  addPOLINE(_handle:String,data:POLINEInput):POLINE
+  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
+  deletePOLINE(_handle:String,id:ID):Boolean
+}
+```
+
+### Security
+ Every action in GraphQL is contrrolled with the Maximo Signature Security. The privliges are standard Maximo _New_, _Delete_ and _Save_ (the names may vary from application to application).
+ 
+## Command mutations
+
+Command mutations are one of the flahship features of GraphQL Server. Using them, you can run __any__ action defined in Maximo MBOs or MboSets. That means that the full business functionality of Maximo is acessible from the GrapqhQL Server, for example adjust inventory, revise po, change status... No other third party product on the market (except our own MaximoPlus) has this as an option.
+
+Before we go into details let's recap how this is done in Maximo itself. In the vast majority of cases, the action requires the non-peresistent MboSet, that is displayed to user in the dialog. User fills in the data, and Maximo calls the _execute_ method of the non-persistent MboSet. 
+
+When using the command mutations in GraphQL, we need to do the following
+
+- Define the type and input for the non persistent MboSet
+- Change the basic type to include the relationship to the non-persistent MboSet
+- Add the update mutation on the non-persistent MboSet to the Mutation type
+- Add the command mutation on the non-persistent MboSet
+
+Example for the _PO_ change status:
+
+```graphql
+type POCHANGESTATUS{
+  status:String
+  memo:String
+  statdate:String
+  _handle:String #no id - it is non-persistent
+}
+
+input POCHANGESTATUSInput{
+  status:String
+  memo:String
+  statdate:String
+}
+
+type PO{
+  id:ID
+  ponum:String
+  description:String
+  status:String
+  orderdate:String
+  poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]
+  list_status(fromRow:Int,numRows:Int, _handle:String, qbe:ALNDOMAINQBE):[ALNDOMAIN] 
+  _handle:String
+  _metadata:POMetadata
+  pochangestatus(_handle:String):[POCHANGESTATUS]
+}
+
+
+type Mutation{
+  addPO(_handle:String,data:POInput):PO
+  updatePO(_handle:String,id:ID,data:POInput):PO
+  deletePO(_handle:String,id:ID):Boolean
+  addPOLINE(_handle:String,data:POLINEInput):POLINE
+  updatePOLINE(_handle:String,id:ID,data:POLINEInput):POLINE
+  deletePOLINE(_handle:String,id:ID):Boolean
+  updatePOCHANGESTATUS(_handle:String,id:ID,data:POCHANGESTATUSInput):POCHANGESTATUS
+  commandPOCHANGESTATUS(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
+ }
+```
+  
+  
+  Notice the last line in the _PO_ type definition and last two lines in the _Mutation_ type, this is where we put the required changes to init and change data in _POCHANGESTAUTS_ MboSet. The relationship name is the __pochangestatus__ and the type and object name is __POCHANGESTATUS__. 
+  
+  First we have to run the query to initialize the non persistent __POCHANGESTATUS__.
+  
+```graphql
+query($poqbe:POQBE){
+  po(fromRow:0, numRows:1, qbe:$poqbe){
+    ponum
+    description
+    _handle
+    id
+    pochangestatus{
+      _handle
+      memo
+      status
+      statdate
+    }
+  }
+}
+```
+
+Query variable example for above:
+
+```graphql
+{
+  "poqbe": {
+    "status": "=wappr"
+  }
+}
+```
+
+Now run the mutation to update the data in non-persistent set:
+
+```graphql
+mutation($handle:String, $pochangestatusinput:POCHANGESTATUSInput){
+  updatePOCHANGESTATUS(_handle:$handle, data:$pochangestatusinput){
+    status
+    memo
+    statdate
+  }
+}
+```
+
+The sample query varialbes:
+
+```graphql
+{
+  "pochangestatusinput": {
+    "status": "APPR",
+    "memo": "test graphql"
+  },
+  "handle": ":2"
+}
+```
+
+Finaly execute the command to actually change the status:
+
+```graphql
+mutation($handle:String){
+  commandPOCHANGESTATUS(_handle:$handle, command:"execute")
+}
+
+```
+
+with the variable:
+```graphql
+{
+  "handle": ":2"
+}
+
+```
+
+### Security for the GraphQL commands
 
 
