@@ -505,6 +505,19 @@ with the variable:
 
 ```
 
+### Signature of the GraphQL command mutations
+
+```graphql
+commandOBJECTNAME(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
+```
+
+ - __handle_ attribute is mandatory. As already shown, you first have to get the hold of the MBO object, and ther run mutations on it
+ - _id_ attribute is rarely used. The vast majority of time, you will run mutations on non-persistent MboSets. It is perfectly valid though, to run the any method on _persistent_ Mbo or MboSet. The only condition is for this is that the method is public and have no arguments. The __id__ attribute is required in this case, and you should put the unique id Mbo id in it.
+ - _command_ attribute is the name of the method called. For non-persistent MboSets that is usually _execute_
+ - _isMbo_ - set this value to true if the command is executed on Mbo and not on MboSet. The _execute_ method is usually on MboSet.
+
 ### Security for the GraphQL commands
+
+If you actually tried to run the command mutation from the previous example, you would get the _Access Denied_ error.
 
 
