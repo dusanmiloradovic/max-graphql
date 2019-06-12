@@ -1,3 +1,35 @@
+# Installation
+
+GraphQL server comes with the fully functional server in the development version, along with the developnment license (maximum five concurrent users)
+
+Prerequisites:
+
+- git
+- docker
+- docker-compose
+
+First clone the project template from our repository:
+
+```sh
+git clone https://bitbucket.org/maximoplusteam/graphql-server-template.git
+
+```
+
+- Navigate to the  graphql-server-template directory
+- Copy the working maximo.ear file, and optionally maximo.properties inside graphql-server-template directory. You can use maximo.properties file to everride the one contained in the maximo.ear file. Make sure you don't use the _localhost_ for the database connection, use the ip of the network adapter.
+- Run the following command:
+```sh
+docker-compose up -d
+```
+
+If you want to see the server log:
+
+```sh
+docker-compose logs -f
+```
+
+You can find more details about GraphQL Server docker image on: https://cloud.docker.com/u/maximoplus/repository/docker/maximoplus/graphql-server
+
 # Introduction
 
 GraphQL server for Maximo is an implementation of the GraphQL tailored for Maximo. It requires absolutely no programming, all you need to do is  define one or more schemas in GraphQL Schema Definition Language (SDL).
@@ -518,6 +550,179 @@ commandOBJECTNAME(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
 
 ### Security for the GraphQL commands
 
-If you actually tried to run the command mutation from the previous example, you would get the _Access Denied_ error.
+If you actually tried to run the command mutation from the previous example, you would get the _Access Denied_ error. 
+
+The mechanism of the GraphqQL Server for Maximo makes it possible to execute _any_ method on MboSets or Mbos. To protect the access to Maximo, we use the same approach like Maximo itself - Signature Security. 
+
+There is one subtle difference between Maximo and GraphQL Server: In Maximo, you grant the access on the level of Maximo Control; for example, when you create a new dialog, you give access to that dialog. 
+
+![Signature Security for GraphQL Server](https://maximoplus.com/doc/maximo_sig_sec.png)
+
+In GraphQL Server  we define access for each Mbo method we need to call. In our above example for the PO status, we need to grant access on the __execute__ method of the __POCHANGESTATUS__ Mbo. Maximo Signature Security is defined only on the level of the application, but we need something to designate the Mbo object. For that, we will use the __DESCRIPTION__ field in the Signature Security application. 
+The format of the description field is **#[Name of the Relationship]**. In the above example, it is _#POCHANGESTATUS_.
+
+It is also very common to have the same method name used frequently in non-persistent relationships. For example, we can have the _execute_ method on another non-persistent Mbo related to our PO  object. The problem is, Signature Security name needs to be unique. In GraphQL Server, you name the options **EXECUTE, EXECUTE_1, EXECUTE_2** , and so on. Everything after the underscore sign is ignored when evaluating access rights - GraphQL Server for Maximo will not check for the EXECUTE_1, but for EXECUTE.
+
+# Routing the Workflow
+
+The mechhanism of the workflow routing in Maximo is different from the one we used to execute the command mutations, and we need separete mutations for that.
+
+All the types, inputs and mutations used for the workflow routing are built-in, you don't need to change anything in the schema.
+
+ Just like in Maximo, there are essentialy two things you can do with the workflow:
+ 
+ - Route the workflow
+ - In case worklfow  result from the previous step requires the user to choose one option, send this choice to GraphQL server, and proceed to the next step, until no input is required from the user.
 
 
+The signature of the _routeWF_ mutation:
+
+```graphql
+  routeWF(_handle:String, processName:String):WFResponse
+```
+
+We need a handle of the MboSet object we got when running the query, and the __name__ of the workflow process that is enabled for the application. The response of the routeWF mutation is the GraphQL __union type__. For the sake of discussion, we will show these types below. As already mentioned, they are built-in, don't put them in your schama
+
+```graphql
+union WFActionResult = INPUTWF | COMPLETEWF | WFFINISHED | INTERACTION
+
+type INPUTWF{
+  actionid:Int
+  instruction:String
+  list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]
+}
+
+type COMPLETEWF{
+  taskdescription:String
+  actionid:Int
+  instruction:String
+  list_actionid(fromRow:Int, numRows:Int,_handle:String):[WFACTION]
+  memos(fromRow:Int, numRows:Int,_handle:String):[WFTRANSACTION]
+}
+
+type INTERACTION{
+  nextapp:String
+  nexttab:String
+}
+
+type WFFINISHED{
+  code:String
+}
+
+type WFResponse{
+  title:String
+  responsetext:String
+  messages:[String]
+  result:WFActionResult
+}
+```
+
+When the user routes the workflow, the WFResponse type is returned, along with the Maximo response text and messages. The result field will return the union type WFActionResult. These are the possible scenarios for this type
+
+- No further action from user is required - type __WFFINISHED__ is returned. You can ignore the code attribute, it is there because types in GraphQL union have to return object types, not scalars.
+- Manual input is required, __INPUTWF__ type is returned. The __actionid__ and __instruction__ are the default valus chosen by Maximo workflow engine. The list of possible actions for a user to choose from are give in __list_actionid__ field
+- User needs to chose a value to complete his workflow assignment, the __COMPLETEWF__ type is returned. It has the same fields as the __INPUITWF__ type plus the __taskdescription__ field (the actual description of the action user needs to perform), and the list of memos so far enetered by other users in __memos__ field.
+- In rare cases, user may end up in interaction node. You will get the _nextapp_ and _nexttab_. You need to decide what to do next. You can for example simply ignore these values, and run the routeWF again.
+
+The following is the mutation you need to run to route the workflow, and get the results. It uses the GraphQL inline fragments (https://graphql.org/learn/queries/#inline-fragments) to get the data from multiple types in the union.
+
+```graphql
+mutation($handle:String, $processName:String){
+  routeWF(_handle:$handle, processName:$processName){
+    result{
+      __typename
+      ... on INPUTWF{
+        actionid
+        instruction
+        list_actionid(fromRow:0, numRows:100){
+          actionid
+          instruction
+        }
+      }
+      ... on COMPLETEWF{
+        actionid
+        taskdescription
+        instruction
+          list_actionid(fromRow:0, numRows:100){
+          actionid
+          instruction
+        }
+        memos(fromRow:0, numRows:100){
+          personid
+          memo
+          transdate
+        }
+        
+      }
+      
+      ... on WFFINISHED{
+        code
+      }
+      
+      ... on INTERACTION{
+        nextapp
+        nexttab
+      }
+    }
+    title
+    responsetext
+  }
+}
+```
+
+In the Playground query variables, define the _handle_ and the _processName_, and run the mutation.
+
+If the response has either _INPUTWF_ or _COMPLETEWF_ type in the __result__ field, you need to present the user the list of options. Once the user picks the option and optionally puts the memo (for the __COMPLETEWF__), you need to run the following mutation:
+
+```graphql
+  chooseWFAction(_handle:String,actionid:Int,memo:String):WFResponse
+  ```
+
+This mutation also returns the __WFResponse__ type, so it may give the user new options to choose from. If that is the case you need to call the _chooseWFAction_ with the newly chosen options, until you get the _WFFINISHED_ type.
+
+Below is the full mutation you can run in Playground:
+
+```graphql
+mutation($handle:String, $actionid:Int, $memo:String){
+  chooseWFAction(_handle:$handle, actionid:$actionid, memo:$memo){
+     result{
+      __typename
+      ... on INPUTWF{
+        actionid
+        instruction
+        list_actionid(fromRow:0, numRows:100){
+          actionid
+          instruction
+        }
+      }
+      ... on COMPLETEWF{
+        actionid
+        taskdescription
+        instruction
+          list_actionid(fromRow:0, numRows:100){
+          actionid
+          instruction
+        }
+        memos(fromRow:0, numRows:100){
+          personid
+          memo
+          transdate
+        }
+        
+      }
+      
+      ... on WFFINISHED{
+        code
+      }
+      
+      ... on INTERACTION{
+        nextapp
+        nexttab
+      }
+    }
+    title
+    responsetext
+  }
+  
+}
+```
