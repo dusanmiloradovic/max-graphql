@@ -6,6 +6,8 @@
    ["eventsource" :as EventSource])
   )
 
+( (js/require "request-debug") request)
+
 (set! *warn-on-infer* true)
 
 (def cookie-jar (.jar request));; I have to get it explicitely, to share with eventsource
