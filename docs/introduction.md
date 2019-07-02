@@ -16,12 +16,12 @@ git clone https://bitbucket.org/maximoplusteam/graphql-server-template.git
 ```
 
 - Navigate to the  graphql-server-template directory
-- Copy the working maximo.ear file, and optionally maximo.properties inside graphql-server-template directory. You can use maximo.properties file to override the one contained in the maximo.ear file. Make sure you don't use the _localhost_ for the database connection, use the IP of the network adapter.
+- Copy the working +maximo.ear_ file, and optionally _maximo.properties_ Inside the _graphql-server-template_ directory. You can use _maximo.properties_ file to override the one contained in the _maximo.ear_ file. Make sure you don't use the _localhost_ for the database connection, use the IP of the network adapter.
+
 - Run the following command:
 ```sh
 docker-compose up -d
 ```
-
 If you want to see the server log:
 
 ```sh
@@ -32,15 +32,15 @@ You can find more details about GraphQL Server docker image on https://cloud.doc
 
 # Introduction
 
-GraphQL server for Maximo is an implementation of the GraphQL tailored for Maximo. It requires absolutely no programming, all you need to do is define one or more schemas in GraphQL Schema Definition Language (SDL).
+GraphQL server for Maximo is an implementation of the GraphQL tailored for Maximo. It requires absolutely no programming; all you need to do is define one or more schemas in GraphQL Schema Definition Language (SDL).
 Each of the SDL files has to fulfill the following:
 
-- The file is placed inside the __schema__ directory
+- The file is inside the __schema__ directory
 - The file has the graphql extension (for example - _receipts.graphql_)
 - Define the Maximo types you want to expose inside the SDL file
-- The GraphQL queries and mutations are defined in the __top-level__ _Query_ and _Mutation_ types
+- The GraphQL queries and mutations are in the __top-level__ _Query_ and _Mutation_ types
 
-Once the GraphQL server starts, all the queries and mutations will be merged into one schema. It is important to verify that there are no duplicate types inside the schemas.
+Once the GraphQL server starts, all the queries and mutations merge into one schema. It is essential to verify that there are no duplicate types inside the schemas.
 
 ## Define the Maximo type in the SDL file
 
@@ -62,7 +62,7 @@ type POLINE{
 }
 ```
 
-Above is the example for PO and POLINE types. The name of the object types and their attributes have to be the same as in the Maximo Database Configuration. By convention, the object types have to be in uppercase and the attributes in the lower case. The types of the attributes map to one of the standard GraphQL scalar types: _ID_, _String_, _Int_, _Float_ and _Boolean_ (see: https://graphql.org/graphql-js/basic-types/). Note that there is no standard _Date_ time in GraphQL, dates and times are mapped to the _String_ type. The id of the object is defined with the __id__ attribute of the _ID_ GraphQL type, and it maps to the internal object id in Maximo (_poid_ and _polineid_ for the above objects). You __have__ to name this attribute __id__ when you define the type.
+Above is the example for _PO_ and _POLINE_ types. The name of the object types and their attributes have to be the same as in the Maximo Database Configuration. By convention, the object types have to be in uppercase and the attributes in the lower case. The types of the attributes map to one of the standard GraphQL scalar types: _ID_, _String_, _Int_, _Float_ and _Boolean_ (see: https://graphql.org/graphql-js/basic-types/ ). Note that there is no standard _Date_ time in GraphQL, dates and times map to the _String_ type. We define the id of the object with the __id__ attribute of the _ID_ GraphQL type, and it maps to the internal object id in Maximo (_poid_ and _polineid_ for the above objects). You __have__ to name this attribute __id__ when you define the type.
 
 ## GraphQL Query type
 
@@ -75,11 +75,11 @@ type Query {
 ```
 
 We cover the ___handle__ and __qbe__ concepts later in this chapter, ignore them for the time being.
-Note that we put just the __po__ type in the __Query__. This is the rule you should follow in your own schemas - put just the top level types inside the __Query__ type. The name of the type inside the _Query_ type is the name of the application in Maximo. In the above example - the name of the type inside the _Query_ is the __po__ (the Maximo name for the Purchase Order application). The return type is the list of the __PO__ types we defined before.
+Note that we put just the __po__ type in the __Query__. It is the rule you should follow in your schemas - put just the top level types inside the __Query__ type. The name of the type inside the _Query_ type is the name of the application in Maximo. In the above example - the name of the type inside the _Query_ is the __po__ (the Maximo name for the Purchase Order application). The return type is the list of the __PO__ types we defined before.
 
 ### Attributes fromRow and numRows
 
-The number of records in any typical Maximo application can have hundreds of thousands or even millions of rows, therefore we need to specify the rows we are fetching from Maximo. The attribute __fromRow__ defines the starting row in a set, and the __numRows__ the number of the rows being fetched
+The number of records in any typical Maximo application can have hundreds of thousands or even millions of rows; therefore, we need to specify the rows we are fetching from Maximo. The attribute __fromRow__ defines the starting row in a set, and the __numRows__ the number of the rows to fetch
 
 Example:
 
@@ -97,7 +97,7 @@ query {
 
 ## Getting the data from Maximo relationship
 
-So far, we have demonstrated just how to fetch the data from the top-level object, in our example the _PO_ type. Getting the relationship data is straightforward. 
+So far, we have demonstrated just how to fetch the data from the top-level object, in our example, the _PO_ type. Getting the relationship data is straightforward. 
 
 Change the _PO_ type in your schema to following:
 
@@ -108,7 +108,7 @@ type PO{
   description:String
   status:String
   orderdate:String
-  poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]	
+  poline(fromRow:Int,numRows:Int, _handle:String, qbe:POLINEQBE):[POLINE]    
 }
 ```
 
@@ -145,8 +145,8 @@ input POQBE{
 }
 ```
 
-By convention, the QBE input type should be named the same as the main type with the QBE appended.
-The QBE syntax is the same as in Maximo, and the same restrictions apply, i.e. you can query only the persistent fields, the syntax depends on the field type. In general, if the qbe works in Maximo, it will work in GraphQL Server as well.
+By convention, the QBE input type should be named the same as the primary type with the QBE appended.
+The QBE syntax is the same as in Maximo, and the same restrictions apply, i.e., you can query only the persistent fields, the syntax depends on the field type. In general, if the qbe works in Maximo, it works in GraphQL Server as well.
 
 To test the qbe, we need to pass the qbe to query. The only way to do it through the Playground is by using the GraphQL _variables_.
 
@@ -201,9 +201,9 @@ Note that the handles are not used for pagination only, you require them for mut
 
 ## Value lists
 
-Value lists and domains are one of the crucial features of Maximo, and if you use GraphQL server to implement the application, you will most likely need them.
+Value lists and domains are one of the basic features of Maximo, and if you use GraphQL server to implement the application, you will most likely need them.
 
-To specify the value list in the main type, you introduce the type with the name _list_attribute_name_ , where __attribute_name__ is the attribute with the value list. For example:
+To specify the value list in the primary type, you introduce the type with the name _list_attribute_name_ , where __attribute_name__ is the attribute with the value list. For example:
 
 ```graphql
 type PO{
@@ -218,7 +218,7 @@ type PO{
 }
 ```
 
-Note that you have to define the return type of the value list in the Schema Definition file. The __ALNDOMAIN__ and __SYNONYMDOMAIN__ types are predefined in the system, so you don't have to do it.
+Note that you have to define the return type of the value list in the Schema Definition file. The GraphQL server predefines some types. __ALNDOMAIN__ and __SYNONYMDOMAIN__ types are one of them, so don't put them in your schema file.
 
 Example query:
 
@@ -239,7 +239,7 @@ query {
 
 ## Metadata
 
-GraphQL server exposes the information about Maximo object attributes. You can use this to get the default labels, data types, and labels. For each type, you have to define the conforming Metadata type. For example, for the _PO_ type we will define the _POMETADATA_ type:
+GraphQL server exposes the information about Maximo object attributes. You can use this to get the default labels, data types, and labels. For each type, you have to define the conforming Metadata type. For example, for the _PO_ type, we  define the _POMETADATA_ type:
 
 ```graphql
 type POMetadata{
@@ -252,7 +252,7 @@ type POMetadata{
 ```
 
 The __ColumnMetadata__ type is pre-defined in the system.
-The next step is to refer the metadata type from the main type, using the special ___metadata__ type:
+The next step is to refer the metadata type from the primary type, using the dedicated ___metadata__ type:
 
 ```graphql
 type PO{
@@ -274,16 +274,16 @@ query {
   po(fromRow:0, numRows:1){
     _metadata{
       description{
-		  title
-		  remarks
-		  persistent
-		  domainId
+          title
+          remarks
+          persistent
+          domainId
       }
       status{
-		  title
-		  remarks
-		  persistent
-		  domainId
+          title
+          remarks
+          persistent
+          domainId
       }
       
     }
@@ -296,15 +296,14 @@ query {
 
 Mutations in GraphQL Server offer the same functionality for changing the data as in Maximo - you can _add_, _update_, _delete_ the data on the object, route the workflow or run the Mbo or MboSet command.
 
-The aim of GraphQL server is to be completely compatible with Maximo. Maximo system is _transactional_, that means you have to explicitly save the record to store the data in the database. For that purpose, we have two built-in mutations in GraphQL server - __save__ and __rollback__.
+The GraphQL server aims to be completely compatible with Maximo. Maximo system is _transactional_, that means you have to explicitly save the record to store the data in the database. For that purpose, we have two built-in mutations in GraphQL server - __save__ and __rollback__.
 
 ## Principles
 
 There are some general differences between the queries and mutations in any GraphQL system. The  most important ones are:
 
-- You can't nest the mutations, all the changes are done on one level only
+- You can't nest the mutations; all the changes are  on one level only
 - To enter the data inside the mutation, you need the __input__, not the _type_
-
 - In GraphQL Server for Maximo, you have to pass the object handle for each mutation
 
 Let's illustrate this with an example. 
@@ -379,7 +378,7 @@ For add:
 addOBJECTNAME(_handle:String, data:OBJECTNAMEInput):OBJECTNAME
 ```
 
-Replace the _OBJECTNAME_ with the name of the object on which you perform the mutation(_POLINE_ in the previous example). As already explained, you need to define the input type
+Replace the _OBJECTNAME_ with the name of the object on which you perform the mutation(_POLINE_ in the previous example). As already explained, you need to define the input type.
 
 For delete:
 
@@ -407,18 +406,18 @@ type Mutation{
 ```
 
 ### Security
- Every action in GraphQL is controlled with the Maximo Signature Security. The privileges are standard Maximo _New_, _Delete_ and _Save_ (the names may vary from application to application).
+ Maximo Signature Security controls every action in GraphQL. The privileges are standard Maximo _New_, _Delete_ and _Save_ (the names may vary from application to application).
  
 ## Command mutations
 
-Command mutations are one of the flagship features of GraphQL Server. Using them, you can run __any__ action defined in Maximo MBOs or MboSets. That means that the full business functionality of Maximo is accessible from the GrapqhQL Server, for example, adjust inventory, revise po, change status... No other third-party product on the market (except our own MaximoPlus) has this as an option.
+Command mutations are one of the flagship features of GraphQL Server. Using them, you can run __any__ action defined in Maximo MBOs or MboSets. That means that the full business functionality of Maximo is accessible from the GrapqhQL Server, for example, adjust inventory, revise the _PO_, change status., and others. No other third-party product on the market (except our other product MaximoPlus) has this as an option.
 
-Before we go into details let's recap how this is done in Maximo itself. In the vast majority of cases, the action requires the non-persistent MboSet, that is displayed to the user in the dialog. User fills in the data, and Maximo calls the _execute_ method of the non-persistent MboSet. 
+Before we go into details, let's recap how we do that in Maximo itself. In the vast majority of cases, the action requires the non-persistent MboSet in the dialog. User fills in the data, and Maximo calls the _execute_ method of the non-persistent MboSet. 
 
-When using the command mutations in GraphQL, we need to do the following
+When using the command mutations in GraphQL, we need to do the following:
 
 - Define the type and input for the non-persistent MboSet
-- Change the basic type to include the relationship to the non-persistent MboSet
+- Change the primary type to include the relationship to the non-persistent MboSet
 - Add the update mutation on the non-persistent MboSet to the Mutation type
 - Add the command mutation on the non-persistent MboSet
 
@@ -465,7 +464,7 @@ type Mutation{
 ```
   
   
-  Notice the last line in the _PO_ type definition and last two lines in the _Mutation_ type, this is where we put the required changes to init and change data in _POCHANGESTAUTS_ MboSet. The relationship name is the __pochangestatus__ and the type and object name is __POCHANGESTATUS__. 
+  Notice the last line in the _PO_ type definition and last two lines in the _Mutation_ type; this is where we put the required changes to init and change data in _POCHANGESTAUTS_ MboSet. The relationship name is the __pochangestatus__, and the type and object name is __POCHANGESTATUS__. 
   
   First, we have to run the query to initialize the non-persistent __POCHANGESTATUS__.
   
@@ -520,7 +519,7 @@ The sample query variables:
 }
 ```
 
-Finally execute the command to actually change the status:
+Finally, execute the command to change the status:
 
 ```graphql
 mutation($handle:String){
@@ -544,13 +543,13 @@ commandOBJECTNAME(_handle:String, id:ID, command:String, isMbo:Boolean):Boolean
 ```
 
  - __handle_ attribute is mandatory. As already shown, you first have to get the hold of the MBO object, and their run mutations on it
- - _id_ attribute is rarely used. The vast majority of the time, you will run mutations on non-persistent MboSets. It is perfectly valid though, to run any method on _persistent_ Mbo or MboSet. The only condition is for this is that the method is public and have no arguments. The __id__ attribute is required in this case, and you should put the unique id Mbo id in it.
+ - _id_ attribute is rarely used. The vast majority of the time, you run mutations on non-persistent MboSets. It is perfectly valid though, to run any method on _persistent_ Mbo or MboSet. The only condition is for this is that the method is public and have no arguments. In this case, GraphQL server requires the __id__ attribute, and you should put the unique id Mbo id in it.
  - _command_ attribute is the name of the method called. For non-persistent MboSets that is usually _execute_
  - _isMbo_ - set this value to true if the command is executed on Mbo and not on MboSet. The _execute_ method is usually on MboSet.
 
 ### Security for the GraphQL commands
 
-If you actually tried to run the command mutation from the previous example, you would get the _Access Denied_ error. 
+If you tried to run the command mutation from the previous example, you would get the _Access Denied_ error. 
 
 The mechanism of the GraphqQL Server for Maximo makes it possible to execute _any_ method on MboSets or Mbos. To protect access to Maximo, we use the same approach as Maximo itself - Signature Security. 
 
@@ -558,21 +557,21 @@ There is one subtle difference between Maximo and GraphQL Server: In Maximo, you
 
 ![Signature Security for GraphQL Server](https://maximoplus.com/doc/maximo_sig_sec.png)
 
-In GraphQL Server we define access for each Mbo method we need to call. In our above example for the PO status, we need to grant access on the __execute__ method of the __POCHANGESTATUS__ Mbo. Maximo Signature Security is defined only on the level of the application, but we need something to designate the Mbo object. For that, we will use the __DESCRIPTION__ field in the Signature Security application. 
+In GraphQL Server, we define access for each Mbo method we need to call. In our above example for the PO status, we need to grant access on the __execute__ method of the __POCHANGESTATUS__ Mbo. Maximo Signature Security is defined only on the level of the application, but we need something to designate the Mbo object. For that, we use the __DESCRIPTION__ field in the Signature Security application. 
 The format of the description field is **#[Name of the Relationship]**. In the above example, it is _#POCHANGESTATUS_.
 
-It is also very common to have the same method name used frequently in non-persistent relationships. For example, we can have the _execute_ method on another non-persistent Mbo related to our PO  object. The problem is, Signature Security name needs to be unique. In GraphQL Server, you name the options **EXECUTE, EXECUTE_1, EXECUTE_2 **, and so on. Everything after the underscore sign is ignored when evaluating access rights - GraphQL Server for Maximo will not check for the EXECUTE_1, but for EXECUTE.
+It is also widespread to have the same method name used frequently in non-persistent relationships. For example, we can have the _execute_ method on another non-persistent Mbo related to our PO  object. The problem is, Signature Security name needs to be unique. In GraphQL Server, you name the options __EXECUTE__, __EXECUTE_1,__ __EXECUTE_2 __ ...  GraphQL Server ignores everything after the underscore sign when evaluating access rights - GraphQL Server for Maximo is not checking for the EXECUTE_1, but EXECUTE.
 
 # Routing the Workflow
 
 The mechanism of the workflow routing in Maximo is different from the one we used to execute the command mutations, and we need separate mutations for that.
 
-All the types, inputs and mutations used for the workflow routing are built-in, you don't need to change anything in the schema.
+All the types, inputs, and mutations used for the workflow routing are built-in, you don't need to change anything in the schema.
 
- Just like in Maximo, there are essentially two things you can do with the workflow:
+ Just like in Maximo, there are mostly two things you can do with the workflow:
  
  - Route the workflow
- - In case workflow result from the previous step requires the user to choose one option, send this choice to GraphQL server, and proceed to the next step, until no input is required from the user.
+ - In case workflow result from the previous step requires the user to choose one option, send this choice to GraphQL server, and proceed to the next step, until the workflow doesn't require input from the user.
 
 
 The signature of the _routeWF_ mutation:
@@ -581,7 +580,7 @@ The signature of the _routeWF_ mutation:
   routeWF(_handle:String, processName:String):WFResponse
 ```
 
-We need a handle of the MboSet object we got when running the query, and the __name__ of the workflow process that is enabled for the application. The response of the routeWF mutation is the GraphQL __union type__. For the sake of discussion, we will show these types below. As already mentioned, they are built-in, don't put them in your schema
+We need a handle of the MboSet object we got when running the query, and the __name__ of the primary workflow process of the application. The response of the _routeWF_ mutation is the GraphQL __union type__. For the sake of discussion, we show these types below. As already mentioned, they are built-in, don't put them in your schema
 
 ```graphql
 union WFActionResult = INPUTWF | COMPLETEWF | WFFINISHED | INTERACTION
@@ -617,12 +616,12 @@ type WFResponse{
 }
 ```
 
-When the user routes the workflow, the WFResponse type is returned, along with the Maximo response text and messages. The result field will return the union type WFActionResult. These are the possible scenarios for this type
+When the user routes the workflow, the WFResponse type is returned, along with the Maximo response text and messages. The result field returns the union type WFActionResult. These are the possible scenarios for this type
 
-- No further action from the user is required - type __WFFINISHED__ is returned. You can ignore the code attribute, it is there because types in GraphQL union have to return object types, not scalars.
-- Manual input is required, __INPUTWF__ type is returned. The __actionid__ and __instruction__ are the default values chosen by Maximo workflow engine. The list of possible actions for a user to choose from gives in __list_actionid__ field
-- User needs to choose a value to complete his workflow assignment, the __COMPLETEWF__ type is returned. It has the same fields as the __INPUITWF__ type plus the __taskdescription__ field (the actual description of the action user needs to perform), and the list of memos so far entered by other users in __memos__ field.
-- In rare cases, a user may end up in an interaction node. You will get the _nextapp_ and _nexttab_. You need to decide what to do next. You can for example simply ignore these values, and run the routeWF again.
+- No further action from the user is required - the system returns the type __WFFINISHED__ . You can ignore the code attribute; it is there because types in GraphQL union have to return object types, not scalars.
+- Manual input is required; the system returns  __INPUTWF__ type. The __actionid__ and __instruction__ are the default values chosen by Maximo workflow engine. The list of possible actions for a user to choose from gives in __list_actionid__ field
+- User needs to choose a value to complete his workflow assignment; the system returns the __COMPLETEWF__ type. It has the same fields as the __INPUITWF__ type plus the __taskdescription__ field (the actual description of the action user needs to perform), and the list of memos so far entered by other users in the __memos__ field.
+- In rare cases, a user may end up in an interaction node. You get the _nextapp_ and _nexttab_. You need to decide what to do next. You can, for example, ignore these values, and rerun the _routeWF_.
 
 The following is the mutation you need to run to route the workflow, and get the results. It uses the GraphQL inline fragments (https://graphql.org/learn/queries/#inline-fragments) to get the data from multiple types in the union.
 
@@ -670,7 +669,7 @@ mutation($handle:String, $processName:String){
 }
 ```
 
-In the Playground query variables, define the _handle_ and the _processName_, and run the mutation.
+In the Playground, query variables, define the _handle_ and the _processName_, and run the mutation.
 
 If the response has either _INPUTWF_ or _COMPLETEWF_ type in the __result__ field, you need to present the user the list of options. Once the user picks the option and optionally puts the memo (for the __COMPLETEWF__), you need to run the following mutation:
 
@@ -678,7 +677,7 @@ If the response has either _INPUTWF_ or _COMPLETEWF_ type in the __result__ fiel
   chooseWFAction(_handle:String,actionid:Int,memo:String):WFResponse
   ```
 
-This mutation also returns the __WFResponse__ type, so it may give the user new options to choose from. If that is the case you need to call the _chooseWFAction_ with the newly chosen options until you get the _WFFINISHED_ type.
+This mutation also returns the __WFResponse__ type, so it may give the user new options to choose. If that is the case, you need to call the _chooseWFAction_ with the newly chosen options until you get the _WFFINISHED_ type.
 
 Below is the full mutation you can run in Playground:
 
