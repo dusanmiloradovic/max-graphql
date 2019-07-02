@@ -393,7 +393,7 @@
 
 (def action-set-fields
   {"COMPLETEWF" ["taskdescription" "actionid" "memo"]
-   "INPUTWF" ["assignee" "memo"]
+   "INPUTWF" ["actionid" "memo"]
    "REASSIGNWF" ["assignee" "memo"]})
 
 (declare route-wf)
