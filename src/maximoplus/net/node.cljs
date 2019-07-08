@@ -1,6 +1,6 @@
 (ns maximoplus.net.node
   (:require
-   [maximoplus.net :as n :refer [INet]]
+   [maximoplus.net.protocols  :refer [INet -send-get -send-post -start-server-push-receiving -stop-server-push-receiving -get-tabsess -set-tabsess!]]
    [maximoplus.utils :as u :refer [transit-read]]
    ["request" :as request]
    ["eventsource" :as EventSource])
@@ -47,7 +47,7 @@
   INet
   (-send-get
     [this url callback error-callback]
-    (n/-send-get this url nil callback error-callback))
+    (-send-get this url nil callback error-callback))
   (-send-get;;ingore data, them later just remove this method, I think it is obsolette
     [this url data callback error-callback]
     (send-data #js{:url (get-url-with-tabsess url)
@@ -55,7 +55,7 @@
                    :jar cookie-jar} callback error-callback))
   (-send-post
     [this url data callback error-callback]
-    (n/-send-post this url data callback error-callback nil))
+    (-send-post this url data callback error-callback nil))
   (-send-post
     [this url data callback error-callback progress-callback];;ignore progress for the time, i don't think it is relevant at this point
     (send-data #js{:url (get-url-with-tabsess url)
@@ -63,9 +63,8 @@
                    :jar cookie-jar
                    :method "POST"} callback error-callback))
   (-start-server-push-receiving
-    [this callback error-callback]
-    (let [sse-url (n/sse)
-          ev-s (EventSource. sse-url #js {:withCredentials true
+    [this sse-url callback error-callback]
+    (let [ev-s (EventSource. sse-url #js {:withCredentials true
                                           :headers #js{"Cookie"  @session-cookie}})]
       (reset! event-source ev-s)
       (.addEventListener ev-s "message"
